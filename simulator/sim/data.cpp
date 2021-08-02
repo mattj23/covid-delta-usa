@@ -49,16 +49,16 @@ void sim::data::to_json(nlohmann::json &j, const sim::data::StateResult &r) {
     };
 }
 
-std::chrono::sys_days sim::data::FromString(const std::string& s) {
+date::sys_days sim::data::FromString(const std::string& s) {
     int day, month, year;
     sscanf(s.c_str(), "%4d-%2d-%2d", &year, &month, &day);
-    return std::chrono::year{year}/month/day;
+    return date::year{year}/month/day;
 }
 
 void sim::data::from_json(const nlohmann::json &j, sim::data::ProgramInput &i) {
     using std::unordered_map;
     using std::string;
-    using std::chrono::sys_days;
+    using date::sys_days;
 
     auto start_text = j.at("start_day").get<std::string>();
     auto end_text = j.at("end_day").get<std::string>();

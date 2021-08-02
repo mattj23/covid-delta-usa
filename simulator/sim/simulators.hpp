@@ -17,7 +17,7 @@ namespace sim {
          * The reset date is inclusive, meaning infections on the reset date itself will be reset. The reset date thus
          * becomes the first date ready for a simulation.
          */
-        void ResetPopulationTo(std::chrono::sys_days date);
+        void ResetPopulationTo(date::sys_days date);
 
         /** @brief Initialize the population from a dataset of assumed daily infections
          *
@@ -26,10 +26,10 @@ namespace sim {
          */
         void InitializePopulation(const std::unordered_map<int, data::InfectedHistory> &history,
                                   const std::vector<data::VariantRecord> &variants,
-                                  std::optional<std::chrono::sys_days> up_to={});
+                                  std::optional<date::sys_days> up_to={});
 
         void InitializeVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines,
-                                std::optional<std::chrono::sys_days> up_to={});
+                                std::optional<date::sys_days> up_to={});
 
         void SetProbabilities(double p_self);
 

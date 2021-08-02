@@ -7,13 +7,15 @@
 #include <unordered_map>
 #include <nlohmann/json.hpp>
 
+#include "../date.h"
+
 
 namespace sim::data {
     /** @brief Reference date for standard integer date representations
      * @summary All dates in integer form are integer day offsets from a reference date, January 1, 2019. This constant
      * records that date for everywhere that a conversion is performed.
      */
-    constexpr std::chrono::sys_days kReferenceZeroDate = std::chrono::year{2019}/01/01;
+    constexpr date::sys_days kReferenceZeroDate = date::year{2019}/01/01;
 
     /** @enum Enumeration for the different covid variants, or None for someone who is not infected
      *
@@ -77,8 +79,8 @@ namespace sim::data {
     void from_json(const nlohmann::json &j, VariantRecord &v);
 
     struct ProgramInput {
-        std::chrono::sys_days start_day;
-        std::chrono::sys_days end_day;
+        date::sys_days start_day;
+        date::sys_days end_day;
         std::string state;
         std::string output_file;
         double contact_probability;
@@ -95,16 +97,16 @@ namespace sim::data {
 
     void from_json(const nlohmann::json &j, ProgramInput &i);
 
-    std::chrono::sys_days FromString(const std::string& s);
+    date::sys_days FromString(const std::string& s);
 
     ProgramInput LoadData(const std::string& file_name);
 
-    inline int ToReferenceDate(const std::chrono::sys_days &day) {
+    inline int ToReferenceDate(const date::sys_days &day) {
         return (int)(day - kReferenceZeroDate).count();
     }
 
-    inline std::chrono::sys_days ToSysDays(int day) {
-        return kReferenceZeroDate + std::chrono::days{day};
+    inline date::sys_days ToSysDays(int day) {
+        return kReferenceZeroDate + date::days{day};
     }
 
 }

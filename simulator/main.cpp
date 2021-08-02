@@ -5,14 +5,12 @@
 #include <algorithm>
 #include <chrono>
 #include <memory>
+#include "date.h"
 
 #include "sim/data.hpp"
 #include "sim/simulators.hpp"
 
 int main(int argc, char **argv) {
-    using std::chrono::year;
-    using std::chrono::days;
-
     std::string data_file = (argc > 1) ? argv[1] : "/tmp/input_data.json";
     printf("Covid Simulation\n");
     printf(" * input file: %s\n", data_file.c_str());
@@ -56,7 +54,7 @@ int main(int argc, char **argv) {
             state->SimulateDay();
 
             // Save the results of the run
-            std::chrono::year_month_day converted_date = today;
+            date::year_month_day converted_date = today;
             sim::data::StepResult step{};
             auto ref_date = sim::data::ToReferenceDate(today);
             step.year = (int)converted_date.year();
@@ -71,7 +69,7 @@ int main(int argc, char **argv) {
             results.back().results.push_back(step);
 
             // Increment the clock
-            today++;
+            today += date::days{1};
         }
 
     }

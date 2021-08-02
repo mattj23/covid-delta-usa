@@ -11,7 +11,7 @@ sim::StateSimulator::StateSimulator(long population, int scale) {
     selector_dist_ = std::make_unique<std::uniform_int_distribution<int>>(0, pop_.size());
 }
 
-void sim::StateSimulator::ResetPopulationTo(std::chrono::sys_days reset_date) {
+void sim::StateSimulator::ResetPopulationTo(date::sys_days reset_date) {
     today_ = data::ToReferenceDate(reset_date);
     vaccine_saves_ = 0;
 
@@ -31,7 +31,7 @@ void sim::StateSimulator::ResetPopulationTo(std::chrono::sys_days reset_date) {
 
 void sim::StateSimulator::InitializePopulation(const std::unordered_map<int, data::InfectedHistory> &history,
                                                const std::vector<data::VariantRecord> &variants,
-                                               std::optional<std::chrono::sys_days> up_to) {
+                                               std::optional<date::sys_days> up_to) {
     // Start by resetting the population completely
     ResetPopulationTo(data::kReferenceZeroDate);
     SynchronizeUnVaxxedCache();
@@ -230,7 +230,7 @@ void sim::StateSimulator::ApplyVaccines(const std::unordered_map<int, data::Vacc
 }
 
 void sim::StateSimulator::InitializeVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines,
-                                             std::optional<std::chrono::sys_days> up_to) {
+                                             std::optional<date::sys_days> up_to) {
     // Get the min and max days of interest
     int working_day = std::numeric_limits<int>::max();
     int max_day = std::numeric_limits<int>::min();

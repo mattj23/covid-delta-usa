@@ -1,10 +1,11 @@
-cmake_minimum_required(VERSION 3.19)
+cmake_minimum_required(VERSION 3.16)
 project(delta_sim)
 
 set(CMAKE_CXX_STANDARD 20)
 find_package(nlohmann_json 3.2.0 REQUIRED)
 
 set(TARGET_SOURCE
+        date.h
         sim/probabilities.hpp
         sim/probabilities.cpp
         sim/person.hpp
