@@ -1,0 +1,7 @@
+{
+  "act_covid_key": "<act covid api key>",
+  "default_input_file": "/tmp/input_data.json",
+  "default_output_file": "/tmp/output_data.json",
+  "binary_path": "../simulator/cmake-build-release/delta_sim",
+  "cache_folder": "./cache"
+}

@@ -1,0 +1,121 @@
+"""
+    Simulation tools
+"""
+
+import json
+import pickle
+from datetime import date as Date
+from dataclasses import dataclass, asdict
+from typing import Dict, List, Optional
+
+from history.estimates import StateEstimates
+from history.states import StateHistory, StateInfo
+from history.vaccine import StateVaccineHistory
+
+
+@dataclass
+class ProgramInput:
+    """
+    Settings for running the simulator program, contains all configuration and setup
+    """
+    output_file: str
+    state: str
+    start_day: Date
+    end_day: Date
+    contact_prob: float
+    delta_incubation_ratio: float
+    delta_infectivity_ratio: float
+    state_info: Dict[str, StateInfo]
+    population_scale: Optional[int] = 10
+    run_count: Optional[int] = 1
+    test_history: Optional[Dict[str, Dict[Date, StateHistory]]] = None
+    infected_history: Optional[Dict[str, Dict[Date, StateEstimates]]] = None
+    vax_history: Optional[Dict[str, Dict[Date, StateVaccineHistory]]] = None
+    variant_history: Optional[List[Dict]] = None
+
+    def write(self, file_name: str):
+        output = {
+            "output_file": self.output_file,
+            "state": self.state,
+            "delta_infectivity_ratio": self.delta_infectivity_ratio,
+            "delta_incubation_ratio": self.delta_incubation_ratio,
+            "start_day": self.start_day.strftime("%Y-%m-%d"),
+            "end_day": self.end_day.strftime("%Y-%m-%d"),
+            "contact_probability": self.contact_prob,
+            "population_scale": self.population_scale,
+            "run_count": self.run_count,
+            "infected_history": _prep_estimates(self.infected_history),
+            "vax_history": _prep_vaccines(self.vax_history),
+            "test_history": _prep_history(self.test_history),
+            "state_info": _prep_state_info(self.state_info),
+            "variant_history": _prep_variant_history(self.variant_history)
+        }
+
+        with open(file_name, "w") as handle:
+            handle.write(json.dumps(output, indent=2))
+
+
+def _prep_variant_history(data: Optional[List[Dict]]) -> List:
+    prepared = []
+    if data is None:
+        return prepared
+
+    for row in data:
+        prepared.append({"date": row["date"].strftime("%Y-%m-%d"), "variants": row["variants"]})
+    return prepared
+
+
+def _prep_state_info(data: Dict[str, StateInfo]) -> Dict:
+    prepared = {}
+    if data is None:
+        return prepared
+
+    for state, info in data.items():
+        prepared[state] = {
+            "population": info.population,
+            "adjacent": info.adjacent
+        }
+    return prepared
+
+
+def _prep_vaccines(data: Optional[Dict[str, StateVaccineHistory]]) -> Dict:
+    prepared = {}
+    if data is None:
+        return prepared
+
+    for state, vax in data.items():
+        prepared[state] = {}
+        for d, e in vax.records.items():
+            prepared[state][d.strftime("%Y-%m-%d")] = {
+                "total_completed_vax": e.completed
+            }
+    return prepared
+
+
+def _prep_history(data: Optional[Dict[str, StateHistory]]) -> Dict:
+    prepared = {}
+    if data is None:
+        return prepared
+
+    for state, hist in data.items():
+        prepared[state] = {}
+        for d, e in hist.records.items():
+            prepared[state][d.strftime("%Y-%m-%d")] = {
+                "total_known_cases": e.total_cases
+            }
+    return prepared
+
+
+def _prep_estimates(data: Optional[Dict[str, StateEstimates]]) -> Dict:
+    prepared = {}
+    if data is None:
+        return prepared
+
+    for state, est in data.items():
+        prepared[state] = {}
+        for d, e in est.estimates.items():
+            prepared[state][d.strftime("%Y-%m-%d")] = {
+                "total_infections": e.total_infections,
+                "total_cases": e.total_cases
+            }
+    return prepared
