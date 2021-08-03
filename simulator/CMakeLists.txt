@@ -5,6 +5,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 
 find_package(nlohmann_json 3.2.0 REQUIRED)
+find_package(OpenMP REQUIRED)
 
 set(TARGET_SOURCE
         date.h
@@ -21,4 +22,4 @@ set(TARGET_SOURCE
 
 add_executable(delta_sim main.cpp ${TARGET_SOURCE})
 add_executable(ref_sim reference.cpp ${TARGET_SOURCE})
-target_link_libraries(delta_sim PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(delta_sim PRIVATE nlohmann_json::nlohmann_json OpenMP::OpenMP_CXX)

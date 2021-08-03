@@ -7,6 +7,8 @@
 #include <memory>
 #include "date.h"
 
+#include <omp.h>
+
 #include "sim/data.hpp"
 #include "sim/simulators.hpp"
 

@@ -16,6 +16,19 @@ namespace sim {
         constexpr double kAlphaVaxEfficacy[] = {0.03, 0.07, 0.10, 0.13, 0.17, 0.20, 0.23, 0.27, 0.30, 0.33, 0.37, 0.40, 0.43, 0.47, 0.50, 0.53, 0.56, 0.60, 0.63, 0.66, 0.70, 0.73, 0.76, 0.80, 0.83, 0.86, 0.90, 0.93 };
     }
 
+    /** @class Distribution
+     *
+     * @summary This is a random value generating distribution which works based on an internal uniform distribution
+     * and transform them into the output of this distribution
+     */
+    class Distribution {
+    public:
+
+
+    private:
+        std::vector<double> values_;
+    };
+
     class Probabilities {
     public:
         static double GetAlphaInfectivity(int days_from_symptoms);
