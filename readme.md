@@ -42,8 +42,8 @@ The [covidestim.org](https://covidestim.org) data can be retrieved in a single C
 The initialization process works as follows: 
 1. We begin just before the first predicted infections in the US, with the entire population reset to a default initial state, containing no infections
 2. We advance one day at a time up until the day *before* the simulation is set to start
-    1. We look at the difference between the cumulative number of estimated infections on that day and the current infections in the population, adjusted by the population scale ratio (are we simulating every person or 1:n people)
-    2. If we have variant data, we look up the variant proportions for that day. We divide the number of infections which need to be added to the population into their scaled portions, and then we move through the population "infecting" the appropriate number of individuals
+    1. We look at the difference between the cumulative number of estimated infections on that day and the current infections in the population, adjusted by the population scale ratio (are we simulating every person or 1:n people?)
+    2. If we have variant data, we look up the variant proportions for that day. We divide the number of infections which need to be added to the population into their scaled portions, and then we move through the population "infecting" the appropriate number of individuals with each variant
     3. The infection mechanics will be covered in further detail later, but to be brief they consist of drawing the date of symptom onset from the appropriate random distribution and marking the individual with the appropriate variant. See the section on [infection and disease progression](#infection-and-disease-progression) for further details.
     4. Additionally, we look the vaccination history provided, and determine the difference between the expected number of completed vaccinations and the number currently in the population.  We select individuals at random from the population (so long as they are more than 30 days from an infection, if they were infected) and mark them as having received the vaccine on the current date.
 
@@ -65,7 +65,7 @@ Once initialized, the historical record is abandoned and the simulation takes ov
 
 While most modeling approaches combine the probability of social contact and the complex biological probability of infection into a single R<sub>0</sub> or growth factor which gets fit based on empirical data, the point of this model is to try to isolate the biological, micro-scale infection mechanics from the separate, macro-scale effects of social behavior.  
 
-The reason to go through all of that effort is to be able to implement any arbitrarily complex micro-scale behavior in a simple and obvious way.  To simulate *any* behavior at the micro-scale, all that needs to be done is to implement the code that enacts the behavior forward in time and (if needed) to add any data fields to the simulated individuals necessary to track related state.  The model can then be run forward many times and the aggregate effect observed.  The cost is a significant increase in computational work.  
+The reason to go through all of that effort is to be able to implement any arbitrarily complex micro-scale behavior in a simple and obvious way.  To simulate *any* behavior at the micro-scale, all that needs to be done is to implement the code that enacts the behavior forward in time and (if needed) to add any data fields to the simulated individuals necessary to track related state.  The model can then be run forward many times and the aggregate effect observed.  The cost of this profound simplicity is a significant increase in CPU time.
 
 The role of the normalized contact probability, which is a value that determines the rate of potentially transmissible events, is to provide a tunable parameter into the model to account for the more difficult to quantify social and policy factors.  This is the value to be adjusted to match empirical data, but one whose effects will always be constrained by the micro-scale behavior.  
 
@@ -100,7 +100,33 @@ On the disease carrier side, the "infectivity" is computed as described above.  
 
 *Note: by pre-empting the infectivity check before it happens based on a binary value of immunity, the micro-mechanics explicitly do not contain any mechanism by which a person's immunity reacts differently to various levels of infective potency of the carrier. This could be implemented in the future if such a mechanism could be characterized.*
 
-Immunity is a complex subject, both biologically and in the model.  Unfortunately, there are no good direct empirical measurements of immunity isolated from social and other factors.  The only measures of immunity we have are efficacy values which represent a reduction in incidence ratio between groups.  Because the system being studied is **not** under steady state conditions, efficacy values are products of the exact time period in which they were measured and do not directly represent underlying probabilities<sup>[14](#efficacy_footnote)</sup>.
+Immunity is a complex subject even in this simplified model.  Unfortunately, there are no good direct empirical measurements of immunity isolated from social and other factors.  The only measures of immunity we have are efficacy values which represent a reduced incidence ratio between groups.  Because the system being studied is **not** under steady state conditions, efficacy values are products of the exact time period in which they were measured and do not directly represent underlying probabilities<sup>[13](#efficacy_footnote)</sup>.
+
+To prevent an immunity mechanic that wanes by nature of being repeatedly testing, it's important to not use a "saving throw" mechanism for pre-empting the carrier's infectivity probability check.  Rather, the stochastic portion of an individual's immunity should be resolved once, so that the simulation isn't doing the equivalent of asking over and over again until it gets an answer it likes.  
+
+However, it's also important to be able to account for immunity that changes with time, since it's known<sup>[14](#lopezbernal2020)</sup> that mRNA vaccine immunity changes between the first and second dose and there's evidence<sup>[12](#cdcleak)</sup> that natural immunity against the delta variant may wane beyond 180 days.
+
+To account for both of these seemingly contradictory requirements, the following method is used:
+1. A baseline curve is produced for every time-dependant immunity response. This curve is the complement of the odds-ratio based efficacy at any point in time. That is, if the observed population efficacy is 30% at time ***t<sub>0</sub>***, the curve at time ***t<sub>0</sub>*** has a value of 0.7.
+2. When an individual joins an immunity category, that individual is assigned a single random value pulled from a uniform distribution from 0.0 to 1.0, called their *immunity scalar*.  That value does not change again.
+3. At any given time ***t***, the individual is immune if their *immunity scalar* is greater than the baseline curve at time ***t***.
+
+Assuming that the uniform distribution generates random samples correctly, at any given time 30% of the population who are at ***t<sub>0</sub>*** in their immunity progression will be immune and the other 70% will not.  If the baseline immunity curve rises to 88% at ***t<sub>1</sub>***, any individuals who were already immune will stay immune, some individuals who were not immune will become immune, and some individuals who were not immune will remain without immunity...but overall the proportion of immune individuals will have risen from 30% to 88% without any recalcuation of the *immunity scalar*.
+
+## Sample model output
+
+The model output is the accumulated historical trajectories of each simulation.  A set of helper classes exist to parse the data and make it easy to plot and analyze.  As an example, here's a run for Florida based on the contents of `simulate.py`.
+
+Keep in mind this is just an example of model output and not a hard prediction for FL's future.  The model at this point (2021-07-30) makes many assumptions which may or may not reflect reality.
+
+* The run below assumes that a case of the alpha variant confers 100% immunity to all SARS-CoV-2 variants forever.  This is an unrealistic and overly optimistic assumption, which we know is not true. It's currently the next thing on the list to be updated.
+* The run below also does not yet include a differing vaccine response for the delta variant, which is extremely optimistic
+* The model does not currently try to predict and thus take into account vaccinations which occur after the historical data from covidactnow.org. If one were to have predicted numbers for the future they are trivial to feed into the simulation, but the image below does not contain an attempt to do so.  Know that that is a *pessimistic* assumption.
+* This doesn't take into account changes in social contact, which may be an *optimistic* assumption depending on schools and colleges going back into session resulting in more contact than the model assumes, or a *pessimistic* one if people begin social distancing, isolation, and other self-protective activities would would result in less contact than the model assumes.
+
+![FL Simulation Test](https://github.com/mattj23/covid-delta-usa/blob/main/images/fl_test_plot.png?raw=true)
+
+*The methodology used to create this graph was to first look back at late May 2021, before widespread incidence of the delta variant, and adjust the contact probability until it roughly matched case growth at that time.  Then, jumping forward to mid July 2021, leaving the contact probability the same as early summer and adjusting the delta variant infectivity ratio until the infection uptick at the end of July was matched. From there allow the simulation to run out until November, when the system has saturated.*
 
 ---
 
@@ -128,31 +154,20 @@ Immunity is a complex subject, both biologically and in the model.  Unfortunatel
 
 <a name="cdcleak">12</a>: Center for Disease Control, [Improving communications around vaccine breakthrough and vaccine effectiveness](https://context-cdn.washingtonpost.com/notes/prod/default/documents/54f57708-a529-4a33-9a44-b66d719070d9/note/7335c3ab-06ee-4121-aaff-a11904e68462.#page=1). Leaked to Washington Post, July 29, 2021
 
-<a name="lopezbernal2021">13</a>: Lopez Bernal J, Andrews N, Gower C, et al. Effectiveness of Covid-19 Vaccines against the B.1.617.2 (Delta) Variant. N Engl J Med. Published online July 21, 2021:NEJMoa2108891. doi:10.1056/NEJMoa2108891
+<a name="efficacy_footnote">13</a>: The efficacy cannot be used as a simple probability for determining the odds of a single infection being prevented, since the same individuals being tested more than one time will statistically result in a population incidence ratio less than the efficacy. Nor can it be thought of as a steady-state incidence ratio in this case, since the infection incidence ratio by definition will start at 0:0 and then change as time progresses and immunity develops/decays.  Rather, the probability of preventing a single infection must be chosen such that after a very specific amount of time *in the system* the incidence ratio of infected group A to infected group B happens to show that the efficacy observed in studies *after that amount of time* is plausible.
 
+<a name="lopezbernal2020">14</a>: Lopez Bernal J, Andrews N, Gower C, et al. Effectiveness of Covid-19 Vaccines against the B.1.617.2 (Delta) Variant. N Engl J Med. Published online July 21, 2021:NEJMoa2108891. doi:10.1056/NEJMoa2108891
 
-## Sample model output
-
-The model output is the accumulated historical trajectories of each simulation.  A set of helper classes exist to parse the data and make it easy to plot and analyze.  As an example, here's a run for Florida based on the contents of `simulate.py`.
-
-Keep in mind this is not a hard prediction for FL's future.  The model at this point (2021-07-30) makes many assumptions which may or may not reflect reality.
-
-* The model uses [covestim.org](https://covestim.org)'s estimates of true infections based on a Bayesian inference model, which currently estimates that there have been several times the amount documented of covid cases in the USA.  Estimates of actual cases in the US range from >3x (CDC) documented cases to ~5x (NIH) based on random seropositivity testing.  This is an *optimistic* assumption, because it implies there is a higher amount of natural immunity in the US population than the raw case numbers would suggest.
-* The model assumes that a case of the alpha variant confers 100% immunity to all SARS-CoV-2 variants forever.  This is an unrealistic and overly optimistic assumption, which we know is not true. It's currently the next thing on the list to be updated.
-* The model assumes that all vaccinations were Pfizer/Moderna and that there is no difference in immunity between the alpha and delta variants.  We already know from a study in the UK<sup>[1](#lopezbernal2021)</sup> this assumption is unrealistic, and the Israeli Ministry of Health data raises questions about time effects on vaccine immunity against delta.  This will also be addressed soon.
-* The model does not currently try to predict and thus take into account vaccinations which occur after the historical data from covidactnow.org. If one were to have predicted numbers for the future they are trivial to feed into the simulation, but the image below does not contain an attempt to do so.  Know that that is a *pessimistic* assumption.
-* Currently there isn't a good single estimate of the difference in infectivity between the delta variant and prior variants.  This data can be estimated from the observed relative spread rates of the delta and alpha variants in the USA between May and July if reasonable estimates for both natural and vaccine immunities to delta can be made.  I intend to do that soon, but it has not yet been performed.  In lieu of this the image below uses a scale factor of 3.8 on the infectivity curve of the alpha variant<sup>[2](#ashcroft2020)</sup> because it allows the empirical contact probability to remain relatively stable while still accounting for late July 2021 infections.
-* This doesn't take into account changes in social contact, which may be an *optimistic* assumption depending on schools and colleges going back into session resulting in more contact than the model assumes, or a *pessimistic* one if people begin social distancing, isolation, and other self-protective activities would would result in less contact than the model assumes.
-
-![FL Simulation Test](https://github.com/mattj23/covid-delta-usa/blob/main/images/fl_test_plot.png?raw=true)
-
-*The methodology used to create this graph was to first look back at late May 2021, before widespread incidence of the delta variant, and adjust the contact probability until it roughly matched case growth at that time.  Then, jumping forward to mid July 2021, leaving the contact probability the same as early summer and adjusting the delta variant infectivity ratio until the infection uptick at the end of July was matched. From there allow the simulation to run out until November, when the system has saturated.*
 
 ---
 
 ## Model parameter discovery
 
+*This section is a placeholder for descriptions of how model parameters were/are actually estimated from historical data*
+
 ### Relative infectivity of delta variant
+
+### Efficacy of vaccines and natural immunity
 
 ---
 
