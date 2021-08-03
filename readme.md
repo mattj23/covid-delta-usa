@@ -44,7 +44,7 @@ The initialization process works as follows:
 2. We advance one day at a time up until the day *before* the simulation is set to start
     1. We look at the difference between the cumulative number of estimated infections on that day and the current infections in the population, adjusted by the population scale ratio (are we simulating every person or 1:n people)
     2. If we have variant data, we look up the variant proportions for that day. We divide the number of infections which need to be added to the population into their scaled portions, and then we move through the population "infecting" the appropriate number of individuals
-    3. The infection mechanics will be covered in further detail later, but to be brief they consist of drawing the date of symptom onset from the appropriate random distribution and marking the individual with the appropriate variant
+    3. The infection mechanics will be covered in further detail later, but to be brief they consist of drawing the date of symptom onset from the appropriate random distribution and marking the individual with the appropriate variant. See the section on [infection and disease progression](#infection-and-disease-progression) for further details.
     4. Additionally, we look the vaccination history provided, and determine the difference between the expected number of completed vaccinations and the number currently in the population.  We select individuals at random from the population (so long as they are more than 30 days from an infection, if they were infected) and mark them as having received the vaccine on the current date.
 
 At the end of this process the population is fully initialized and ready for the simulation.  All future events will be determined by simulation events and not the historical record.
@@ -58,7 +58,7 @@ Once initialized, the historical record is abandoned and the simulation takes ov
 
 1. First, we start by iterating through the entire set of contagious individuals in the population. For each one we apply a normalized **contact probability** to a binomial distribution to determine how many other members of the population they come into contact with.  This is effectively the same as testing each contagious individual against every other individual, flipping a coin with the normalized contact probability to decide if the two meet.
 2. The contact probability determines whether or not two individuals in the population have a potentially transmissible encounter, after which the probability of transmission is governed only by the [infection mechanics](#infection-mechanics).  When a member of the population draws a positive integer ***n*** from the binomial distribution based on the contact probability, that value represents the number of other individuals they will come in contact with that day.  We then randomly select ***n*** other individuals from the population to simulate contact with.<sup>[5](#contact_footnote)</sup>
-3. For each contact, the probability of infection is calculated from the underlying infection mechanics, which take into account factors like the carrier's viral variant and time since infection, and the exposed's time-dependent natural/vaccine immunities against the carrier's variant.  A random value is then selected from a uniform distribution and tested against the unique transmission probability for the contact. If it succeeds the transmission event has occurred and the exposed individual is infected with the carrier's variant.
+3. For each contact, the probability of infection is calculated from the underlying [infection mechanics](#infection-mechanics), which take into account factors like the carrier's viral variant and time since infection, and the exposed's time-dependent natural/vaccine immunities against the carrier's variant.  A random value is then selected from a uniform distribution and tested against the unique transmission probability for the contact. If it succeeds the transmission event has occurred and the exposed individual is infected with the carrier's variant.
 4. Finally, we look to see if we have a vaccination record provided for the day and, if we do, we apply the vaccinations randomly to unvaccinated members of the population who are at least 30 days since being infected.
 
 ### The role of the normalized contact probability
@@ -76,9 +76,17 @@ Ideally, then, when reasonable parameters for the normalized contact probability
 
 The infection mechanics are the heart of this model, and they fall into two portions.  The first has to do with how an infection occurs and what happens to the individual in the population who becomes infected.  The second has to do with calculating the probability of infection, taking into account the complex effects of heterogenous and changing immunities.
  
+#### Infection and disease progression
 
+A March 2020 paper in the New England Journal of Medicine by Li et al.<sup>[7](#li2020)</sup> attempted to quantify the transmission dynamics of the early pandemic as observed in the first 425 confirmed cases in Wuhan.  Among other things, Li identified both a distribution of the serial interval (an epidimiological term for the generation-to-generation infection interval) and a distribution representing the incubation time (time from infection to onset of symptoms). The latter took the form of an exponentiated Weibull distribution (Li 2020, Figure 2A) which can be described by the parameters `a=12.6245844, c=0.57604443, scale=0.64524305` with no shift from zero.
 
+Several papers also attempted to produce curves for the time dynamics of infectiousness, notably He et al<sup>[8](#he2020)</sup> published May 2020 in Nature and followed by a correction (Ashcroft et al 2020)<sup>[9](#ashcroft2020)</sup>. Ashcroft revisited He's data and produced a corrected gamma distribution with paramters given in Table 1 for the estimate of "infectivity" with respect to days from symptom offset.
 
+Between Li and Ashcroft's correction of He, both the incubation distribution and the "infectivity" distribution are approximated and can together yield a workable estimation of transmission dynamics for SARS-CoV-2 in the simulated model.
+
+Thus, for the non-delta variants, when an individual in the simulated population is "infected", the date of infection is recorded as the date of the contact event which produced the transmission.  The date of symptom onset is then determined by pulling a random value from Li's exponentiated Weibull distribution and adding it to the current simulation day, yielding a future date at which time "symptoms" will manifest.  This is performed once when the individual is "infected" and the date is recorded into the individual's record.
+
+When this now-infected virus carrying individual is part of a future potential transmission event with another individual, the carrier's "infectivity" is determined by determining the days passed since the individual developed symptoms (will be negative for pre-symptomatic transmission) and plugged into Ashcroft/He's gamma distribution.  The infectivity in this case is a scaled, dimensionless probability of transmitting an infection whose absolute magnitude is unimportant<sup>[10](#infectivity)</sup> but whose relative value against other dates and other viral variants will have a meaningful effect on the model output.
 
 
 ---
@@ -95,6 +103,13 @@ The infection mechanics are the heart of this model, and they fall into two port
 
 <a name="probability_footnote">6</a>:  This probability can be thought of as the conditional P(T|C), where T is the transmitted event and C is the contact event defined by the normalized contact probability.
 
+<a name="li2020">7</a>: Li Q, Guan X, Wu P, et al. Early Transmission Dynamics in Wuhan, China, of Novel Coronavirus–Infected Pneumonia. N Engl J Med. 2020;382(13):1199-1207. doi:10.1056/NEJMoa2001316
+
+<a name="he2020">8</a>: He X, Lau EHY, Wu P, et al. Temporal dynamics in viral shedding and transmissibility of COVID-19. Nat Med. 2020;26(5):672-675. doi:10.1038/s41591-020-0869-5
+
+<a name="ashcroft2020">9</a>: Ashcroft P, Huisman JS, Lehtinen S, et al. COVID-19 infectivity profile correction. Swiss Med Wkly. Published online August 5, 2020. doi:10.4414/smw.2020.20336
+
+<a name="infectivity">10</a>: On an absolute scale the values of the infectivity probability aren't important because the model dynamics are governed by the ratio between the normalized contact probability and the area under the infectivity curve.  That is, if the area under the infectivity curve gets smaller, the contact probability will become larger to accomodate the observed historical record, and vice versa.  The significance of the infectivity curve is that we can then, for example, make a rough estimate of the delta variant's dynamics by plugging in a different curve, or even just a scale factor.
 
 ## Sample model output
 
