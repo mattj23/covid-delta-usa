@@ -88,6 +88,19 @@ Thus, for the non-delta variants, when an individual in the simulated population
 
 When this now-infected virus carrying individual is part of a future potential transmission event with another individual, the carrier's "infectivity" is determined by determining the days passed since the individual developed symptoms (will be negative for pre-symptomatic transmission) and plugged into Ashcroft/He's gamma distribution.  The infectivity in this case is a scaled, dimensionless probability of transmitting an infection whose absolute magnitude is unimportant<sup>[10](#infectivity)</sup> but whose relative value against other dates and other viral variants will have a meaningful effect on the model output.
 
+For the delta variant, a very recent July 23, 2021 preprint<sup>[11](#li2021)</sup> studying an outbreak in Guangzhou noted that relative viral loads were 1260x higher on the day of first detection than they were for older variants.  Additionally, the day of the first positive PCR+ test was 4 days for the delta variant vs 6 days for the 2020 outbreak.  Thus, for a quick and dirty estimation, this model estimates the incubation time of the delta variant by drawing from Li's exponentiated Weibull and then scaling the result by 2/3rds.
+
+The >1000-fold increase in viral load does not correspond with a 1000x increase in infectivity, but rough estimates of R<sub>0</sub> values for traditional models are placing delta at 8 to 9<sup>[12](#cdcleak)</sup>, while the pre-alpha variants were around 3 and the alpha variant is potentially 4 to 5.  As such it's possible to make a rough estimate of delta's infectivity by scaling the output of Ashcroft/He's gamma distribution between 2 and 3. More detailed estimation is covered in the section below devoted to discovering the [relative infectivity of the delta variant.](#relative-infectivity-of-delta-variant)
+
+Additionally, other probability distributions can and will be added here to track disease progression; this will allow the recording of aggregate population statistics for things like disease severity, hospitalizations, and mortality.
+
+#### Immunity and probability of infection
+
+On the disease carrier side, the "infectivity" is computed as described above.  If the exposed individual has an immunity, however, the probability check against the carrier's infectivity is pre-empted and the transmission event is not completed.
+
+*Note: by pre-empting the infectivity check before it happens based on a binary value of immunity, the micro-mechanics explicitly do not contain any mechanism by which a person's immunity reacts differently to various levels of infective potency of the carrier. This could be implemented in the future if such a mechanism could be characterized.*
+
+Immunity is a complex subject, both biologically and in the model.  Unfortunately, there are no good direct empirical measurements of immunity isolated from social and other factors.  The only measures of immunity we have are efficacy values which represent a reduction in incidence ratio between groups.  Because the system being studied is **not** under steady state conditions, efficacy values are products of the exact time period in which they were measured and do not directly represent underlying probabilities<sup>[14](#efficacy_footnote)</sup>.
 
 ---
 
@@ -111,6 +124,13 @@ When this now-infected virus carrying individual is part of a future potential t
 
 <a name="infectivity">10</a>: On an absolute scale the values of the infectivity probability aren't important because the model dynamics are governed by the ratio between the normalized contact probability and the area under the infectivity curve.  That is, if the area under the infectivity curve gets smaller, the contact probability will become larger to accomodate the observed historical record, and vice versa.  The significance of the infectivity curve is that we can then, for example, make a rough estimate of the delta variant's dynamics by plugging in a different curve, or even just a scale factor.
 
+<a name="li2021">11</a>: Li B, Deng A, Li K, et al. Viral infection and transmission in a large, well-traced outbreak caused by the SARS-CoV-2 Delta variant. medRxiv. Published online July 23, 2021:2021.07.07.21260122. doi:10.1101/2021.07.07.21260122
+
+<a name="cdcleak">12</a>: Center for Disease Control, [Improving communications around vaccine breakthrough and vaccine effectiveness](https://context-cdn.washingtonpost.com/notes/prod/default/documents/54f57708-a529-4a33-9a44-b66d719070d9/note/7335c3ab-06ee-4121-aaff-a11904e68462.#page=1). Leaked to Washington Post, July 29, 2021
+
+<a name="lopezbernal2021">13</a>: Lopez Bernal J, Andrews N, Gower C, et al. Effectiveness of Covid-19 Vaccines against the B.1.617.2 (Delta) Variant. N Engl J Med. Published online July 21, 2021:NEJMoa2108891. doi:10.1056/NEJMoa2108891
+
+
 ## Sample model output
 
 The model output is the accumulated historical trajectories of each simulation.  A set of helper classes exist to parse the data and make it easy to plot and analyze.  As an example, here's a run for Florida based on the contents of `simulate.py`.
@@ -130,11 +150,12 @@ Keep in mind this is not a hard prediction for FL's future.  The model at this p
 
 ---
 
+## Model parameter discovery
 
-<a name="lopezbernal2021">1</a>: 1. Lopez Bernal J, Andrews N, Gower C, et al. Effectiveness of Covid-19 Vaccines against the B.1.617.2 (Delta) Variant. N Engl J Med. Published online July 21, 2021:NEJMoa2108891. doi:10.1056/NEJMoa2108891
+### Relative infectivity of delta variant
 
-<a name="ashcroft2020">2</a>: Ashcroft P, Huisman JS, Lehtinen S, et al. COVID-19 infectivity profile correction. Swiss Med Wkly. Published online August 5, 2020. doi:10.4414/smw.2020.20336
 ---
+
 
 ## C++ and Python components
 
