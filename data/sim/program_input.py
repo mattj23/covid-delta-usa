@@ -11,6 +11,7 @@ from typing import Dict, List, Optional
 from history.estimates import StateEstimates
 from history.states import StateHistory, StateInfo
 from history.vaccine import StateVaccineHistory
+from sim.dynamics import WorldProperties, prepare_world_properties
 
 
 @dataclass
@@ -23,8 +24,7 @@ class ProgramInput:
     start_day: Date
     end_day: Date
     contact_prob: float
-    delta_incubation_ratio: float
-    delta_infectivity_ratio: float
+    world_properties: WorldProperties
     state_info: Dict[str, StateInfo]
     population_scale: Optional[int] = 10
     run_count: Optional[int] = 1
@@ -37,8 +37,7 @@ class ProgramInput:
         output = {
             "output_file": self.output_file,
             "state": self.state,
-            "delta_infectivity_ratio": self.delta_infectivity_ratio,
-            "delta_incubation_ratio": self.delta_incubation_ratio,
+            "world_properties": prepare_world_properties(self.world_properties),
             "start_day": self.start_day.strftime("%Y-%m-%d"),
             "end_day": self.end_day.strftime("%Y-%m-%d"),
             "contact_probability": self.contact_prob,

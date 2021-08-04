@@ -19,8 +19,6 @@ def main():
     input_data = ProgramInput(
         output_file=settings.default_output_file,
         state="FL",
-        delta_incubation_ratio=2 / 3,
-        delta_infectivity_ratio=3.8,
         start_day=Date(2021, 7, 14),
         end_day=Date(2021, 11, 14),
         contact_prob=1.67,
