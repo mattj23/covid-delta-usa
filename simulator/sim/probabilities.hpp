@@ -19,22 +19,6 @@ namespace sim {
 
     class Probabilities {
     public:
-        static double GetAlphaInfectivity(int days_from_symptoms);
-        static double GetAlphaVaxEfficacy(int days_from_vax);
-
-        static double GetInfectivity(data::Variant variant, int days_from_symptoms);
-
-        int GetIncubation(data::Variant variant);
-
-        int GetAlphaIncubation();
-
-        /** @brief Generate a random test lag related to the alpha variant incubation time
-         *
-         * @param factor a value to scale the randomly sampled alpha incubation time for test lag
-         * @return a number of days which represent the lag between the date of infection and the date of the test
-         */
-        int GetTestingLag(double factor=1.5);
-
         /**
          * Simulates a true or false chance of something happening according to a uniform distribution. If the
          * randomly generated value is less than the probability supplied the function will return true. Thus small
@@ -48,17 +32,9 @@ namespace sim {
 
         std::mt19937_64& GetGenerator() { return generator_; }
 
-        inline static void SetDeltaIncubation(double ratio) { delta_incubation_ratio = ratio; }
-        inline static void SetDeltaInfectivity(double ratio) { delta_infectivity_ratio = ratio; }
-
     private:
-        std::random_device rd_{};
-        std::mt19937_64 generator_{rd_()};
+        std::mt19937_64 generator_{std::random_device{}()};
         std::uniform_real_distribution<double> chance_{0, 1};
-        std::weibull_distribution<double> alpha_incubation_{2.04, 1.89};
-
-        inline static double delta_incubation_ratio;
-        inline static double delta_infectivity_ratio;
     };
 
 }
