@@ -78,16 +78,40 @@ namespace sim::data {
 
     void from_json(const nlohmann::json &j, VariantRecord &v);
 
+    struct DiscreteFunction {
+        std::vector<double> values;
+        int offset;
+
+        double operator()(int day) const;
+    };
+
+    void from_json(const nlohmann::json &j, DiscreteFunction &f);
+
+    struct VariantProperties {
+        std::vector<double> incubation;
+        DiscreteFunction infectivity;
+        DiscreteFunction vax_immunity;
+        DiscreteFunction natural_immunity;
+    };
+
+    void from_json(const nlohmann::json &j, VariantProperties &v);
+
+    struct WorldProperties {
+        VariantProperties alpha;
+        VariantProperties delta;
+    };
+
+    void from_json(const nlohmann::json &j, WorldProperties &w);
+
     struct ProgramInput {
         date::sys_days start_day;
         date::sys_days end_day;
         std::string state;
         std::string output_file;
         double contact_probability;
-        double delta_infectivity_ratio;
-        double delta_incubation_ratio;
         int population_scale;
         int run_count;
+        WorldProperties world_properties;
         std::unordered_map<std::string, std::unordered_map<int, InfectedHistory>> infected_history;
         std::unordered_map<std::string, std::unordered_map<int, KnownCaseHistory>> known_case_history;
         std::unordered_map<std::string, std::unordered_map<int, VaccineHistory>> vax_history;

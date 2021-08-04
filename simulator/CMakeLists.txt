@@ -11,6 +11,8 @@ set(TARGET_SOURCE
         date.h
         sim/probabilities.hpp
         sim/probabilities.cpp
+        sim/variant_probabilities.hpp
+        sim/variant_probabilities.cpp
         sim/person.hpp
         sim/person.cpp
         sim/reference_simulators.hpp

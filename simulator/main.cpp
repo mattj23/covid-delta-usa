@@ -19,9 +19,6 @@ int main(int argc, char **argv) {
 
     auto input = sim::data::LoadData(data_file);
 
-    sim::Probabilities::SetDeltaIncubation(input.delta_incubation_ratio);
-    sim::Probabilities::SetDeltaInfectivity(input.delta_infectivity_ratio);
-
     const auto &state_info = input.state_info[input.state];
 
     auto state = std::make_shared<sim::StateSimulator>(state_info.population, input.population_scale);
@@ -37,6 +34,8 @@ int main(int argc, char **argv) {
         printf(" * initializing population vaccines\n");
         state->InitializeVaccines(input.vax_history[input.state], input.start_day);
     }
+
+    auto start = std::chrono::system_clock::now();
 
     printf(" * starting simulation\n");
     std::vector<sim::data::StateResult> results;
@@ -75,7 +74,9 @@ int main(int argc, char **argv) {
         }
 
     }
-    printf(" * simulation complete\n");
+    auto end = std::chrono::system_clock::now();
+    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    printf(" * simulation complete in %lu ms\n", elapsed);
 
     nlohmann::json encoded = results;
     std::ofstream output{input.output_file.c_str()};

@@ -66,13 +66,12 @@ void sim::data::from_json(const nlohmann::json &j, sim::data::ProgramInput &i) {
     i.end_day = FromString(end_text);
     j.at("state").get_to(i.state);
     j.at("contact_probability").get_to(i.contact_probability);
-    j.at("delta_infectivity_ratio").get_to(i.delta_infectivity_ratio);
-    j.at("delta_incubation_ratio").get_to(i.delta_incubation_ratio);
     j.at("population_scale").get_to(i.population_scale);
     j.at("run_count").get_to(i.run_count);
     j.at("state_info").get_to(i.state_info);
     j.at("output_file").get_to(i.output_file);
     j.at("variant_history").get_to(i.variant_history);
+    j.at("world_properties").get_to(i.world_properties);
 
     auto infected_history = j.at("infected_history").get<unordered_map<string, unordered_map<string, InfectedHistory>>>();
     auto test_data = j.at("test_history").get<unordered_map<string, unordered_map<string, KnownCaseHistory>>>();
@@ -128,4 +127,29 @@ std::unordered_map<sim::data::Variant, double> sim::data::GetVariantFractions(in
     }
 
     return results;
+}
+
+void sim::data::from_json(const nlohmann::json &j, sim::data::DiscreteFunction &f) {
+    j.at("values").get_to(f.values);
+    j.at("offset").get_to(f.offset);
+}
+
+void sim::data::from_json(const nlohmann::json &j, sim::data::VariantProperties &v) {
+    j.at("incubation").get_to(v.incubation);
+    j.at("infectivity").get_to(v.infectivity);
+    j.at("vax_immunity").get_to(v.vax_immunity);
+    j.at("natural_immunity").get_to(v.natural_immunity);
+}
+
+void sim::data::from_json(const nlohmann::json &j, sim::data::WorldProperties &w) {
+    j.at("alpha").get_to(w.alpha);
+    j.at("delta").get_to(w.delta);
+}
+
+
+double sim::data::DiscreteFunction::operator()(int day) const {
+    auto shifted = day + offset;
+    shifted = std::min((int)values.size()-1, shifted);
+    shifted = std::max(0, shifted);
+    return values[shifted];
 }
