@@ -8,13 +8,14 @@ namespace sim {
     struct Person {
     public:
         data::Variant variant{data::Variant::None};
-        bool is_immune{};
         int infected_day{};
         int symptom_onset{};
         int test_day{};
+        float natural_immunity_scalar{};
+        float vaccine_immunity_scalar{};
         std::optional<int> vaccinated{};
 
-        inline bool IsInfected() const { return variant != data::Variant::None; }
+        [[nodiscard]] inline bool IsInfected() const { return variant != data::Variant::None; }
     };
 
 }

@@ -7,9 +7,7 @@ double sim::VariantProbabilities::GetInfectivity(int days_from_symptoms) const {
     return properties_.infectivity(days_from_symptoms);
 }
 
-int sim::VariantProbabilities::GetRandomIncubation(std::mt19937_64 &mt) {
-    return incubation_(mt);
-}
+int sim::VariantProbabilities::GetRandomIncubation(std::mt19937_64 &mt) { return incubation_(mt); }
 
 double sim::VariantProbabilities::GetVaxImmunity(int days_from_vax) const {
     return properties_.vax_immunity(days_from_vax);
@@ -19,4 +17,11 @@ double sim::VariantProbabilities::GetNaturalImmunity(int days_from_infection) co
     return properties_.natural_immunity(days_from_infection);
 }
 
+bool sim::VariantProbabilities::IsPersonNatImmune(const sim::Person &person, int today) const {
+    return person.IsInfected() && person.natural_immunity_scalar > GetNaturalImmunity(person.infected_day);
+}
 
+bool sim::VariantProbabilities::IsPersonVaxImmune(const sim::Person &person, int today) const {
+    return person.vaccinated.has_value() &&
+           person.vaccine_immunity_scalar > GetVaxImmunity(today - person.vaccinated.value());
+}

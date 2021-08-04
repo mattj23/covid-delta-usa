@@ -10,6 +10,7 @@
 #include <omp.h>
 
 #include "sim/data.hpp"
+#include "sim/variant_probabilities.hpp"
 #include "sim/simulators.hpp"
 
 int main(int argc, char **argv) {
@@ -18,6 +19,8 @@ int main(int argc, char **argv) {
     printf(" * input file: %s\n", data_file.c_str());
 
     auto input = sim::data::LoadData(data_file);
+
+    std::unordered_map<sim::data::Variant, sim::VariantProbabilities> variants;
 
     const auto &state_info = input.state_info[input.state];
 
