@@ -135,7 +135,7 @@ def natural_alpha_efficacy() -> DiscreteFunction:
     values = []
     for i in range(300):
         values.append(float(nat(i)))
-    return DiscreteFunction(0, values)
+    return DiscreteFunction(0, values).mean_filter(50)
 
 
 def natural_delta_efficacy() -> DiscreteFunction:
@@ -167,7 +167,7 @@ def natural_delta_efficacy() -> DiscreteFunction:
     for i in range(300):
         values.append(float(nat(i)))
 
-    return DiscreteFunction(0, values)
+    return DiscreteFunction(0, values).mean_filter(50)
 
 
 def pfizer_delta_efficacy() -> DiscreteFunction:
@@ -234,4 +234,4 @@ def pfizer_alpha_efficacy() -> DiscreteFunction:
     # plt.plot(x_, efx)
     # plt.show()
 
-    return DiscreteFunction(0, efx)
+    return DiscreteFunction(0, efx).mean_filter(10)
