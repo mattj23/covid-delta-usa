@@ -53,12 +53,12 @@ namespace sim::data {
         int year;
         uint month;
         uint day;
-        ulong infections;
-        ulong new_infections;
-        ulong positive_tests;
-        ulong vaccine_saves;
-        ulong vaccinated;
-        ulong delta;
+        int total_infections;
+        int total_vaccinated;
+        int never_infected;
+        int total_delta_infections;
+        int total_alpha_infections;
+        int reinfections;
     };
 
     struct StateResult {

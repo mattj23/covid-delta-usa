@@ -39,12 +39,17 @@ class StateSimulator {
     void ApplyVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines, int for_date);
     void ApplyTodaysVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines);
 
-    size_t TestedPositive(int on_day);
-    int TotalInfected() const { return total_infections_ * scale_; };
-    size_t TotalVaccinated(int on_day);
-    size_t TotalWithDelta(int on_day);
+    inline int TotalInfections() const { return total_infections_ * scale_; }
+    inline int TotalVaccinated() const { return total_vaccinated_ * scale_; }
+    inline int NeverInfected() const { return never_infected_ * scale_; }
+    inline int TotalDeltaInfections() const { return total_delta_infections_ * scale_; }
+    inline int TotalAlphaInfections() const { return total_alpha_infections_ * scale_; }
+    inline int Reinfections() const { return reinfections_ * scale_; }
 
-    inline int VaccineSaves() const { return vaccine_saves_; }
+    inline int VaccineSaves() const { return vaccine_saves_ * scale_; }
+
+    data::StepResult GetStepResult() const;
+
 
   private:
     int scale_{};
@@ -52,7 +57,11 @@ class StateSimulator {
     int vaccine_saves_{};
 
     int total_infections_{};
-    int re_infections_{};
+    int total_vaccinated_{};
+    int never_infected_{};
+    int total_delta_infections_{};
+    int total_alpha_infections_{};
+    int reinfections_{};
 
     Probabilities prob_{};
     std::vector<Person> pop_{};
@@ -62,10 +71,6 @@ class StateSimulator {
     std::unique_ptr<std::binomial_distribution<int>> self_contact_dist_{};
     std::unique_ptr<std::uniform_int_distribution<int>> selector_dist_{};
 
-    /** @brief clear the infectious_ cache set and re-fill it by going through the entire population
-     *
-     */
-    void SynchronizeInfectedCache();
     void SynchronizeUnVaxxedCache();
     void InfectPerson(size_t person_index, const VariantProbabilities &variant);
 };

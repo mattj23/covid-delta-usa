@@ -33,12 +33,12 @@ void sim::data::to_json(nlohmann::json &j, const sim::data::StepResult &r) {
             {"year", r.year},
             {"month", r.month},
             {"day", r.day},
-            {"infections", r.infections},
-            {"new_infections", r.new_infections},
-            {"positive_tests", r.positive_tests},
-            {"has_delta", r.delta},
-            {"vaccinated", r.vaccinated},
-            {"vaccine_saves", r.vaccine_saves}
+            {"total_infections", r.total_infections},
+            {"total_vaccinated", r.total_vaccinated},
+            {"never_infected", r.never_infected},
+            {"reinfections", r.reinfections},
+            {"total_delta_infections", r.total_delta_infections},
+            {"total_alpha_infections", r.total_alpha_infections}
     };
 }
 

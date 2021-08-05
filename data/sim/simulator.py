@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import json
 from typing import Dict, List, Optional, Callable, Tuple
 
@@ -22,20 +24,37 @@ class ValueDistribution:
 @dataclass
 class PlottableSteps:
     dates: List[Date]
-    infections: ValueDistribution
+    total_infections: ValueDistribution
     new_infections: ValueDistribution
-    vaccinated: ValueDistribution
-    vaccine_saves: ValueDistribution
+    total_vaccinated: ValueDistribution
+    never_infected: ValueDistribution
+    total_delta_infections: ValueDistribution
+    new_delta_infections: ValueDistribution
+    total_alpha_infections: ValueDistribution
+    new_alpha_infections: ValueDistribution
+    reinfections: ValueDistribution
+    new_reinfections: ValueDistribution
 
 
 @dataclass
 class StepResult:
     date: Date
-    infections: int
-    new_infections: int
-    positive_tests: int
-    vaccinated: int
-    vaccine_saves: int
+    total_infections: int
+    total_vaccinated: int
+    never_infected: int
+    total_delta_infections: int
+    total_alpha_infections: int
+    reinfections: int
+    new_infections: int = 0
+    new_delta_infections: int = 0
+    new_alpha_infections: int = 0
+    new_reinfections: int = 0
+
+    def set_difference_values(self, other: StepResult):
+        self.new_infections = self.total_infections - other.total_infections
+        self.new_delta_infections = self.total_delta_infections - other.total_delta_infections
+        self.new_alpha_infections = self.total_alpha_infections - other.total_alpha_infections
+        self.new_reinfections = self.reinfections - other.reinfections
 
 
 @dataclass
@@ -52,12 +71,19 @@ class SimulationResult:
         if end is not None:
             dates = [d for d in dates if d <= end]
 
-        return PlottableSteps(dates=dates,
-                              infections=self._get_high_mean_lo(state, lambda step: step.infections, start, end),
-                              new_infections=self._get_high_mean_lo(state, lambda step: step.new_infections, start, end),
-                              vaccinated=self._get_high_mean_lo(state, lambda step: step.vaccinated, start, end),
-                              vaccine_saves=self._get_high_mean_lo(state, lambda step: step.vaccine_saves, start, end)
-                              )
+        return PlottableSteps(
+            dates=dates,
+            total_infections=self._get_high_mean_lo(state, lambda step: step.total_infections, start, end),
+            new_infections=self._get_high_mean_lo(state, lambda step: step.new_infections, start, end),
+            total_vaccinated=self._get_high_mean_lo(state, lambda step: step.total_vaccinated, start, end),
+            never_infected=self._get_high_mean_lo(state, lambda step: step.never_infected, start, end),
+            total_delta_infections=self._get_high_mean_lo(state, lambda step: step.total_delta_infections, start, end),
+            total_alpha_infections=self._get_high_mean_lo(state, lambda step: step.total_alpha_infections, start, end),
+            reinfections=self._get_high_mean_lo(state, lambda step: step.reinfections, start, end),
+            new_delta_infections=self._get_high_mean_lo(state, lambda step: step.new_delta_infections, start, end),
+            new_alpha_infections=self._get_high_mean_lo(state, lambda step: step.new_alpha_infections, start, end),
+            new_reinfections=self._get_high_mean_lo(state, lambda step: step.new_reinfections, start, end)
+        )
 
     def _get_high_mean_lo(self, state: str,
                           extractor: Callable,
@@ -113,15 +139,18 @@ class Simulator:
 
             run_result = []
             for d in row["results"]:
-                run_result.append(StepResult(
-                    date=Date(d["year"], d["month"], d["day"]),
-                    infections=d["infections"],
-                    new_infections=d["new_infections"],
-                    positive_tests=d["positive_tests"],
-                    vaccinated=d["vaccinated"],
-                    vaccine_saves=d["vaccine_saves"]
-                ))
+                d_ = dict(d)
+                del d_["day"]
+                del d_["month"]
+                del d_["year"]
+                d_["date"] = Date(d["year"], d["month"], d["day"])
+                run_result.append(StepResult(**d_))
 
-            results[state_name].append(sorted(run_result, key=lambda x: x.date))
+            run_result.sort(key=lambda x: x.date)
+            for i in range(len(run_result) - 1):
+                run_result[i+1].set_difference_values(run_result[i])
+
+            # add all but the first value, which is before the start day
+            results[state_name].append(run_result[1:])
 
         return results

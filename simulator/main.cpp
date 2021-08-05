@@ -51,6 +51,8 @@ int main(int argc, char **argv) {
 
         auto today = input.start_day;
         while (today < input.end_day) {
+            results.back().results.push_back(state->GetStepResult());
+
             // Add the newly vaccinated
             if (!input.vax_history.empty()) state->ApplyTodaysVaccines(input.vax_history[input.state]);
 
@@ -58,25 +60,13 @@ int main(int argc, char **argv) {
             state->SimulateDay(variants);
 
             // Save the results of the run
-            date::year_month_day converted_date = today;
-            sim::data::StepResult step{};
-            auto ref_date = sim::data::ToReferenceDate(today);
-            step.year = (int)converted_date.year();
-            step.month = converted_date.month().operator unsigned int();
-            step.day = converted_date.day().operator unsigned int();
-            step.infections = state->TotalInfected();
-//            step.new_infections = step.infections - state->TotalInfected(ref_date - 1);
-            step.positive_tests = state->TestedPositive(ref_date);
-            step.vaccinated = state->TotalVaccinated(ref_date);
-            step.vaccine_saves = state->VaccineSaves();
-            step.delta = state->TotalWithDelta(ref_date);
-            results.back().results.push_back(step);
 
             // Increment the clock
             today += date::days{1};
         }
-
+        results.back().results.push_back(state->GetStepResult());
     }
+
     auto end = std::chrono::system_clock::now();
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     printf(" * simulation complete in %lu ms\n", elapsed);

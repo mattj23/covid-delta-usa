@@ -60,9 +60,9 @@ def main():
     plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
     plt_i = input_data.infected_history[input_data.state].get_plottable(plot_start, plot_end)
 
-    ax0.fill_between(plt_r.dates, plt_r.infections.upper, plt_r.infections.lower, facecolor="orange", alpha=0.5)
+    ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor="orange", alpha=0.5)
     ax0.plot(plt_i.dates, plt_i.total_infections, "deeppink", linewidth=3, label="Covidestim.org Infections")
-    ax0.plot(plt_r.dates, plt_r.infections.mean, "darkorange", linewidth=2, label="Simulated Total Infections w/ Delta")
+    ax0.plot(plt_r.dates, plt_r.total_infections.mean, "darkorange", linewidth=2, label="Simulated Total Infections w/ Delta")
 
     ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor="gold", alpha=0.5)
     ax1.plot(plt_i.dates, plt_i.infections, "coral", linewidth=3, label="Covidestim.org Daily Infections")
