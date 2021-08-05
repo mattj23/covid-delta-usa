@@ -28,9 +28,9 @@ class ProgramInput:
     state_info: Dict[str, StateInfo]
     population_scale: Optional[int] = 10
     run_count: Optional[int] = 1
-    test_history: Optional[Dict[str, Dict[Date, StateHistory]]] = None
-    infected_history: Optional[Dict[str, Dict[Date, StateEstimates]]] = None
-    vax_history: Optional[Dict[str, Dict[Date, StateVaccineHistory]]] = None
+    test_history: Optional[Dict[str, StateHistory]] = None
+    infected_history: Optional[Dict[str, StateEstimates]] = None
+    vax_history: Optional[Dict[str, StateVaccineHistory]] = None
     variant_history: Optional[List[Dict]] = None
 
     def write(self, file_name: str):

@@ -58,5 +58,3 @@ def prepare_world_properties(w: WorldProperties) -> Dict:
         "delta": prepare_variant_properties(w.delta)
     }
 
-# def default_world_properties() -> WorldProperties:
-#     alpha
