@@ -9,6 +9,8 @@
 #include <vector>
 
 namespace sim {
+    using VariantDictionary = std::unordered_map<data::Variant, std::unique_ptr<VariantProbabilities>>;
+
 class StateSimulator {
   public:
     StateSimulator(long population, int scale);
@@ -27,7 +29,7 @@ class StateSimulator {
      */
     void InitializePopulation(const std::unordered_map<int, data::InfectedHistory> &history,
                               const std::vector<data::VariantRecord> &variant_history,
-                              const std::unordered_map<data::Variant, VariantProbabilities> &variants,
+                              const VariantDictionary &variants,
                               std::optional<date::sys_days> up_to = {});
 
     void InitializeVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines,
@@ -35,7 +37,7 @@ class StateSimulator {
 
     void SetProbabilities(double p_self);
 
-    void SimulateDay(const std::unordered_map<data::Variant, VariantProbabilities> &variants);
+    void SimulateDay(const VariantDictionary &variants);
 
     void ApplyVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines, int for_date);
     void ApplyTodaysVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines);

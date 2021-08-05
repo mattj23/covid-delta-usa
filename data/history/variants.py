@@ -14,10 +14,11 @@ def load_variant_history() -> List[Dict]:
     variants = [
         {"date": Date(2021, 5, 8), "variants": {"alpha": None, "delta": 0.014}},
         {"date": Date(2021, 5, 22), "variants": {"alpha": None, "delta": 0.031}},
-        {"date": Date(2021, 6, 5), "variants": {"alpha": None, "delta": 0.103}},
-        {"date": Date(2021, 6, 19), "variants": {"alpha": None, "delta": 0.319}},
-        {"date": Date(2021, 7, 3), "variants": {"alpha": None, "delta": 0.627}},
-        {"date": Date(2021, 7, 17), "variants": {"alpha": None, "delta": 0.822}},
+        {"date": Date(2021, 6, 5), "variants": {"alpha": None, "delta": 0.086 + 0.013 + 0.004}},
+        {"date": Date(2021, 6, 19), "variants": {"alpha": None, "delta": 0.265 + 0.044 + 0.010}},
+        {"date": Date(2021, 7, 3), "variants": {"alpha": None, "delta": 0.535 + 0.078 + 0.012}},
+        {"date": Date(2021, 7, 17), "variants": {"alpha": None, "delta": 0.720 + 0.107}},
+        {"date": Date(2021, 7, 31), "variants": {"alpha": None, "delta": 0.834 + 0.091 + 0.008}},
     ]
 
     for row in variants:

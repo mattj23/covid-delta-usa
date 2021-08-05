@@ -14,20 +14,22 @@
 #include "sim/simulators.hpp"
 
 int main(int argc, char **argv) {
+    using sim::data::Variant;
+
     std::string data_file = (argc > 1) ? argv[1] : "/tmp/input_data.json";
     printf("Covid Simulation\n");
     printf(" * input file: %s\n", data_file.c_str());
 
     auto input = sim::data::LoadData(data_file);
 
-    std::unordered_map<sim::data::Variant, sim::VariantProbabilities> variants;
+    std::unordered_map<Variant, std::unique_ptr<sim::VariantProbabilities>> variants;
+    variants[Variant::Alpha] = std::make_unique<sim::VariantProbabilities>(input.world_properties.alpha);
+    variants[Variant::Delta] = std::make_unique<sim::VariantProbabilities>(input.world_properties.delta);
 
     const auto &state_info = input.state_info[input.state];
 
     auto state = std::make_shared<sim::StateSimulator>(state_info.population, input.population_scale);
 
-    // If we have a direct infection history we'll use that to initialize the model, otherwise we will use the
-    // positive test history and have to initialize past the start date and reset back to it
     printf(" * initializing from infections data\n");
     state->InitializePopulation(input.infected_history[input.state],
                                 input.variant_history, variants,

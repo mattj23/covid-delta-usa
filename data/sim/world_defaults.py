@@ -90,6 +90,10 @@ def alpha_infectivity_curve() -> DiscreteFunction:
         y = scipy.stats.gamma.pdf(i - offset, shape, -shift, 1 / rate)
         values.append(y)
 
+    # The last value in the infectivity curve MUST be 0, otherwise the simulation will not be able to efficiently
+    # remove infected individuals after they stop being contagious
+    values.append(0)
+
     return DiscreteFunction(offset, values)
 
 
@@ -230,4 +234,4 @@ def pfizer_alpha_efficacy() -> DiscreteFunction:
     # plt.plot(x_, efx)
     # plt.show()
 
-    return DiscreteFunction(21, efx)
+    return DiscreteFunction(0, efx)

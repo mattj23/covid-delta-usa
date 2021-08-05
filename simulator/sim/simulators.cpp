@@ -31,7 +31,7 @@ void sim::StateSimulator::ResetPopulationTo(date::sys_days reset_date) {
 
 void sim::StateSimulator::InitializePopulation(const std::unordered_map<int, data::InfectedHistory> &history,
                                                const std::vector<data::VariantRecord> &variant_history,
-                                               const std::unordered_map<data::Variant, VariantProbabilities> &variants,
+                                               const VariantDictionary &variants,
                                                std::optional<date::sys_days> up_to) {
     // Start by resetting the population completely
     ResetPopulationTo(data::kReferenceZeroDate);
@@ -74,7 +74,8 @@ void sim::StateSimulator::InitializePopulation(const std::unordered_map<int, dat
                 auto &p = pop_[infected_pointer];
                 p.variant = variant;
                 p.infected_day = today_;
-                p.symptom_onset = p.infected_day + variants.at(variant).GetRandomIncubation(prob_.GetGenerator());
+                p.symptom_onset = p.infected_day + variants.at(variant)->GetRandomIncubation(prob_.GetGenerator());
+                p.natural_immunity_scalar = (float) prob_.UniformScalar();
 
                 infected_pointer++;
             }
@@ -106,21 +107,21 @@ void sim::StateSimulator::SetProbabilities(double p_self) {
     self_contact_dist_ = std::make_unique<std::binomial_distribution<int>>((int)pop_.size(), normalized_contact_prob);
 }
 
-void sim::StateSimulator::SimulateDay(const std::unordered_map<data::Variant, VariantProbabilities>& variants) {
+void sim::StateSimulator::SimulateDay(const VariantDictionary &variants) {
     std::vector<size_t> no_longer_infectious;
     std::vector<std::tuple<size_t, data::Variant>> to_infect;
 
     // First, calculate the new infections, which will be applied in a later step
-    for (size_t index : infectious_) {
-        const auto& p = pop_[index];
+    for (size_t carrier_index : infectious_) {
+        const auto& carrier = pop_[carrier_index];
 
         // How infectious are they today
-        const auto& variant_info = variants.at(p.variant);
-        auto infection_p = variant_info.GetInfectivity(today_ - p.symptom_onset);
+        const auto& variant_info = variants.at(carrier.variant);
+        auto infection_p = variant_info->GetInfectivity(today_ - carrier.symptom_onset);
 
         // Check if this guy has passed the point of being infectious
-        if (infection_p <= 0 && today_ > p.symptom_onset) {
-            no_longer_infectious.push_back(index);
+        if (infection_p <= 0 && today_ > carrier.symptom_onset) {
+            no_longer_infectious.push_back(carrier_index);
             continue;
         }
 
@@ -133,15 +134,25 @@ void sim::StateSimulator::SimulateDay(const std::unordered_map<data::Variant, Va
         // to act as the person who had contact with this carrier.
         for (int i = 0; i < contact_count; ++i) {
             // Randomly pick a member of the population
-            auto selected = (*selector_dist_)(prob_.GetGenerator());
+            auto contact_index = (*selector_dist_)(prob_.GetGenerator());
+            const auto& contact = pop_[contact_index];
 
-            // If the contacted person is already infected, we can move on
-            if (pop_[selected].IsInfected()) continue;
+            // Check if they have natural immunity
+            if (variant_info->IsPersonNatImmune(contact, today_)) {
+                // Natural immunity preempted the infection check
+                continue;
+            }
+
+            // Check if they have vaccine immunity
+            if (variant_info->IsPersonVaxImmune(contact, today_)) {
+                // Vaccine conferred immunity preempted the infection check
+                continue;
+            }
 
             // At this point we know the contacted person is vulnerable to infection, so we roll the dice based
             // on how infectious the carrier is today
             if (prob_.UniformChance(infection_p)) {
-                to_infect.emplace_back(selected, p.variant);
+                to_infect.emplace_back(contact_index, carrier.variant);
             }
         }
     }
@@ -156,18 +167,10 @@ void sim::StateSimulator::SimulateDay(const std::unordered_map<data::Variant, Va
         auto &person = pop_[selected];
         const auto& variant_info = variants.at(variant);
 
-        if (variant_info.IsPersonVaxImmune(person, today_)) {
-            vaccine_saves_++;
-            continue;
-        }
-
-        if (variant_info.IsPersonNatImmune(person, today_)) {
-            continue;
-        }
-
         person.variant = variant;
         person.infected_day = today_;
-        person.symptom_onset = variant_info.GetRandomIncubation(prob_.GetGenerator()) + today_;
+        person.symptom_onset = variant_info->GetRandomIncubation(prob_.GetGenerator()) + today_;
+        person.natural_immunity_scalar = (float) prob_.UniformScalar();
         infectious_.insert(selected);
     }
 
@@ -203,8 +206,12 @@ size_t sim::StateSimulator::TotalWithDelta(int on_day) {
 }
 
 void sim::StateSimulator::ApplyVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines, int for_date) {
-    // Look ahead two weeks and add the vaccinations now
-    auto shifted = for_date + 14;
+    // The issue that we have with the vaccine history is that it's taking into account "completed" vaccinations, which
+    // means the patient has received the second shot.  Because we can't track vaccinations individually, the
+    // approximation chosen here is to look at completed vaccinations 21 days in the future and apply those vaccinations
+    // today. The immunity will begin to ramp up according to the efficacy curves.
+
+    auto shifted = for_date + 21;
     auto vax = vaccines.find(shifted);
     if (vax == vaccines.end()) return;
 
@@ -213,20 +220,21 @@ void sim::StateSimulator::ApplyVaccines(const std::unordered_map<int, data::Vacc
     int vaccinated = 0;
 
     while ((pop_.size() - un_vaxxed_.size()) < to_be_vaxxed) {
-        auto s = un_vaxxed_.size();
-        std::uniform_int_distribution<int> dist(0, (int)s);
+        // Pick someone at random to get a vax_history
+        std::uniform_int_distribution<int> dist(0, (int)un_vaxxed_.size());
         int index = dist(prob_.GetGenerator());
         auto person_index = un_vaxxed_[index];
+
         if (index < un_vaxxed_.size() - 1)
             std::swap(un_vaxxed_[index], un_vaxxed_.back());
         un_vaxxed_.pop_back();
 
-        // Pick someone at random to get a vax_history
         auto &person = pop_[person_index];
         if (person.vaccinated.has_value()) continue;
         if (person.IsInfected() && (for_date - person.infected_day) < 30) continue;
 
         person.vaccinated = for_date;
+        person.vaccine_immunity_scalar = (float) prob_.UniformScalar();
     }
 }
 
