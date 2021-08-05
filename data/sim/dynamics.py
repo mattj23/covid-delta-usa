@@ -1,6 +1,7 @@
 """
     Classes and tools for handling system dynamics
 """
+from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 from typing import List, Dict
@@ -10,6 +11,9 @@ from typing import List, Dict
 class DiscreteFunction:
     offset: int
     values: List[float]
+
+    def scale_by(self, factor: float) -> DiscreteFunction:
+        return DiscreteFunction(self.offset, [y * factor for y in self.values])
 
 
 @dataclass
@@ -41,5 +45,5 @@ def prepare_world_properties(w: WorldProperties) -> Dict:
         "delta": prepare_variant_properties(w.delta)
     }
 
-
-def default_world_properties() -> WorldProperties:
+# def default_world_properties() -> WorldProperties:
+#     alpha

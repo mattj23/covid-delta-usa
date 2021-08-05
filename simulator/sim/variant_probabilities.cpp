@@ -7,7 +7,15 @@ double sim::VariantProbabilities::GetInfectivity(int days_from_symptoms) const {
     return properties_.infectivity(days_from_symptoms);
 }
 
-int sim::VariantProbabilities::GetRandomIncubation(std::mt19937_64 &mt) { return incubation_(mt); }
+int sim::VariantProbabilities::GetRandomIncubation(std::mt19937_64 &mt) const {
+    std::uniform_real_distribution<double> dist(0, 1);
+    auto value = dist(mt);
+    for (int i = 0; i < incubation_.size(); ++i) {
+        if (value >= incubation_[i])
+            return i;
+    }
+    return (int)incubation_.size();
+}
 
 double sim::VariantProbabilities::GetVaxImmunity(int days_from_vax) const {
     return properties_.vax_immunity(days_from_vax);

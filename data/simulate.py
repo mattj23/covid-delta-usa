@@ -12,13 +12,14 @@ from matplotlib.axes._axes import Axes
 import settings
 from history import (load_state_estimates, load_state_histories, load_state_info, load_variant_history,
                      load_vaccine_histories)
-from sim import ProgramInput, Simulator
+from sim import ProgramInput, Simulator, default_world_properties
 
 
 def main():
     input_data = ProgramInput(
         output_file=settings.default_output_file,
         state="FL",
+        world_properties=default_world_properties(),
         start_day=Date(2021, 7, 14),
         end_day=Date(2021, 11, 14),
         contact_prob=1.67,

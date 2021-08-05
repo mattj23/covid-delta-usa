@@ -30,7 +30,7 @@ int main(int argc, char **argv) {
     // positive test history and have to initialize past the start date and reset back to it
     printf(" * initializing from infections data\n");
     state->InitializePopulation(input.infected_history[input.state],
-                                input.variant_history,
+                                input.variant_history, variants,
                                 input.start_day);
 
     if (!input.vax_history.empty()) {
@@ -55,7 +55,7 @@ int main(int argc, char **argv) {
             if (!input.vax_history.empty()) state->ApplyTodaysVaccines(input.vax_history[input.state]);
 
             // Simulate the day's events
-            state->SimulateDay();
+            state->SimulateDay(variants);
 
             // Save the results of the run
             date::year_month_day converted_date = today;
