@@ -15,12 +15,9 @@ class StateSimulator {
   public:
     StateSimulator(long population, int scale);
 
-    /** @brief Reset all of the population data, bringing them back to their state at a particular date
-     *
-     * The reset date is inclusive, meaning infections on the reset date itself will be reset. The reset date thus
-     * becomes the first date ready for a simulation.
+    /** @brief Reset all of the population data, bringing them back to their state pre-pandemic
      */
-    void ResetPopulationTo(date::sys_days date);
+    void Reset();
 
     /** @brief Initialize the population from a dataset of assumed daily infections
      *
@@ -42,9 +39,8 @@ class StateSimulator {
     void ApplyVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines, int for_date);
     void ApplyTodaysVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines);
 
-    size_t TotalInfectious();
     size_t TestedPositive(int on_day);
-    size_t TotalInfected(int on_day);
+    int TotalInfected() const { return total_infections_ * scale_; };
     size_t TotalVaccinated(int on_day);
     size_t TotalWithDelta(int on_day);
 
@@ -54,6 +50,10 @@ class StateSimulator {
     int scale_{};
     int today_{};
     int vaccine_saves_{};
+
+    int total_infections_{};
+    int re_infections_{};
+
     Probabilities prob_{};
     std::vector<Person> pop_{};
     std::unordered_set<size_t> infectious_{};
@@ -67,6 +67,7 @@ class StateSimulator {
      */
     void SynchronizeInfectedCache();
     void SynchronizeUnVaxxedCache();
+    void InfectPerson(size_t person_index, const VariantProbabilities &variant);
 };
 
 } // namespace sim

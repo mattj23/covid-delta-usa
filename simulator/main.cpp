@@ -23,33 +23,31 @@ int main(int argc, char **argv) {
     auto input = sim::data::LoadData(data_file);
 
     std::unordered_map<Variant, std::unique_ptr<sim::VariantProbabilities>> variants;
-    variants[Variant::Alpha] = std::make_unique<sim::VariantProbabilities>(input.world_properties.alpha);
-    variants[Variant::Delta] = std::make_unique<sim::VariantProbabilities>(input.world_properties.delta);
+    variants[Variant::Alpha] = std::make_unique<sim::VariantProbabilities>(input.world_properties.alpha, Variant::Alpha);
+    variants[Variant::Delta] = std::make_unique<sim::VariantProbabilities>(input.world_properties.delta, Variant::Delta);
 
     const auto &state_info = input.state_info[input.state];
 
     auto state = std::make_shared<sim::StateSimulator>(state_info.population, input.population_scale);
-
-    printf(" * initializing from infections data\n");
-    state->InitializePopulation(input.infected_history[input.state],
-                                input.variant_history, variants,
-                                input.start_day);
-
-    if (!input.vax_history.empty()) {
-        printf(" * initializing population vaccines\n");
-        state->InitializeVaccines(input.vax_history[input.state], input.start_day);
-    }
 
     auto start = std::chrono::system_clock::now();
 
     printf(" * starting simulation\n");
     std::vector<sim::data::StateResult> results;
     for (int run = 0; run < input.run_count; ++run) {
+        // Initialize the population from the beginning
+        state->InitializePopulation(input.infected_history[input.state],
+                                    input.variant_history, variants,
+                                    input.start_day);
+
+        if (!input.vax_history.empty()) {
+            state->InitializeVaccines(input.vax_history[input.state], input.start_day);
+        }
+
+        state->SetProbabilities(input.contact_probability);
+
         results.emplace_back();
         results.back().name = input.state;
-
-        state->ResetPopulationTo(input.start_day);
-        state->SetProbabilities(input.contact_probability);
 
         auto today = input.start_day;
         while (today < input.end_day) {
@@ -66,8 +64,8 @@ int main(int argc, char **argv) {
             step.year = (int)converted_date.year();
             step.month = converted_date.month().operator unsigned int();
             step.day = converted_date.day().operator unsigned int();
-            step.infections = state->TotalInfected(ref_date);
-            step.new_infections = step.infections - state->TotalInfected(ref_date - 1);
+            step.infections = state->TotalInfected();
+//            step.new_infections = step.infections - state->TotalInfected(ref_date - 1);
             step.positive_tests = state->TestedPositive(ref_date);
             step.vaccinated = state->TotalVaccinated(ref_date);
             step.vaccine_saves = state->VaccineSaves();

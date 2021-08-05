@@ -6,7 +6,7 @@
 namespace sim {
     class VariantProbabilities {
     public:
-        explicit VariantProbabilities(const data::VariantProperties& variant);
+        VariantProbabilities(const data::VariantProperties& variant_properties, data::Variant variant);
 
         [[nodiscard]] double GetInfectivity(int days_from_symptoms) const;
         [[nodiscard]] double GetVaxImmunity(int days_from_vax) const;
@@ -16,7 +16,10 @@ namespace sim {
 
         [[nodiscard]] bool IsPersonVaxImmune(const Person& person, int today) const;
         [[nodiscard]] bool IsPersonNatImmune(const Person& person, int today) const;
+
+        [[nodiscard]] data::Variant GetVariant() const { return variant_; }
     private:
+        data::Variant variant_;
         std::vector<double> incubation_;
         data::VariantProperties properties_;
     };

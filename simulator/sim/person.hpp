@@ -16,6 +16,16 @@ namespace sim {
         std::optional<int> vaccinated{};
 
         [[nodiscard]] inline bool IsInfected() const { return variant != data::Variant::None; }
+
+        inline void Reset() {
+            variant = data::Variant::None;
+            infected_day = 0;
+            symptom_onset = 0;
+            test_day = 0;
+            natural_immunity_scalar = 0;
+            vaccine_immunity_scalar = 0;
+            vaccinated = {};
+        }
     };
 
 }

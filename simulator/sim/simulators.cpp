@@ -11,22 +11,17 @@ sim::StateSimulator::StateSimulator(long population, int scale) {
     selector_dist_ = std::make_unique<std::uniform_int_distribution<int>>(0, pop_.size());
 }
 
-void sim::StateSimulator::ResetPopulationTo(date::sys_days reset_date) {
-    today_ = data::ToReferenceDate(reset_date);
+void sim::StateSimulator::Reset() {
     vaccine_saves_ = 0;
+    total_infections_ = 0;
+    today_ = 0;
 
-    for (auto &p : pop_) {
-        if (p.infected_day >= today_) {
-            p.symptom_onset = 0;
-            p.variant = data::Variant::None;
-            p.infected_day = 0;
-        }
-
-        if (p.vaccinated.has_value() && p.vaccinated.value() >= today_) {
-            p.vaccinated = {};
-        }
+    for (auto &person : pop_) {
+        person.Reset();
     }
-    SynchronizeInfectedCache();
+
+    infectious_.clear();
+    SynchronizeUnVaxxedCache();
 }
 
 void sim::StateSimulator::InitializePopulation(const std::unordered_map<int, data::InfectedHistory> &history,
@@ -34,8 +29,7 @@ void sim::StateSimulator::InitializePopulation(const std::unordered_map<int, dat
                                                const VariantDictionary &variants,
                                                std::optional<date::sys_days> up_to) {
     // Start by resetting the population completely
-    ResetPopulationTo(data::kReferenceZeroDate);
-    SynchronizeUnVaxxedCache();
+    Reset();
 
     size_t infected_pointer = 0;
 
@@ -71,12 +65,12 @@ void sim::StateSimulator::InitializePopulation(const std::unordered_map<int, dat
             int to_add = (int)std::round(fraction * (double)total_to_add);
 
             for (int k = 0; k < to_add; ++k) {
-                auto &p = pop_[infected_pointer];
-                p.variant = variant;
-                p.infected_day = today_;
-                p.symptom_onset = p.infected_day + variants.at(variant)->GetRandomIncubation(prob_.GetGenerator());
-                p.natural_immunity_scalar = (float) prob_.UniformScalar();
-
+//                auto &p = pop_[infected_pointer];
+//                p.variant = variant;
+//                p.infected_day = today_;
+//                p.symptom_onset = p.infected_day + variants.at(variant)->GetRandomIncubation(prob_.GetGenerator());
+//                p.natural_immunity_scalar = (float) prob_.UniformScalar();
+                InfectPerson(infected_pointer, *variants.at(variant));
                 infected_pointer++;
             }
 
@@ -84,8 +78,16 @@ void sim::StateSimulator::InitializePopulation(const std::unordered_map<int, dat
 
         working_day++;
     }
+}
 
-    SynchronizeInfectedCache();
+void sim::StateSimulator::InfectPerson(size_t person_index, const VariantProbabilities &variant) {
+    auto &person = pop_[person_index];
+    person.variant = variant.GetVariant();
+    person.infected_day = today_;
+    person.symptom_onset = today_ + variant.GetRandomIncubation(prob_.GetGenerator());
+    person.natural_immunity_scalar = (float) prob_.UniformScalar();
+    infectious_.insert(person_index);
+    total_infections_++;
 }
 
 void sim::StateSimulator::SynchronizeInfectedCache() {
@@ -164,31 +166,23 @@ void sim::StateSimulator::SimulateDay(const VariantDictionary &variants) {
 
     // Add the newly infected
     for (const auto &[selected, variant] : to_infect) {
-        auto &person = pop_[selected];
-        const auto& variant_info = variants.at(variant);
-
-        person.variant = variant;
-        person.infected_day = today_;
-        person.symptom_onset = variant_info->GetRandomIncubation(prob_.GetGenerator()) + today_;
-        person.natural_immunity_scalar = (float) prob_.UniformScalar();
-        infectious_.insert(selected);
+        InfectPerson(selected, *variants.at(variant));
+//        auto &person = pop_[selected];
+//        const auto& variant_info = variants.at(variant);
+//
+//        person.variant = variant;
+//        person.infected_day = today_;
+//        person.symptom_onset = variant_info->GetRandomIncubation(prob_.GetGenerator()) + today_;
+//        person.natural_immunity_scalar = (float) prob_.UniformScalar();
+//        infectious_.insert(selected);
     }
 
     today_++;
 }
 
-size_t sim::StateSimulator::TotalInfectious() {
-    return infectious_.size();
-}
-
 size_t sim::StateSimulator::TestedPositive(int on_day) {
     return std::count_if(pop_.begin(), pop_.end(),
                          [&on_day](const Person& p){ return p.IsInfected() && p.test_day <= on_day; }) * scale_;
-}
-
-size_t sim::StateSimulator::TotalInfected(int on_day) {
-    return std::count_if(pop_.begin(), pop_.end(),
-                         [&on_day](const Person& p){ return p.IsInfected() && p.infected_day <= on_day; }) * scale_;
 }
 
 size_t sim::StateSimulator::TotalVaccinated(int on_day) {
@@ -217,7 +211,6 @@ void sim::StateSimulator::ApplyVaccines(const std::unordered_map<int, data::Vacc
 
     const auto& today_data = vax->second;
     int to_be_vaxxed = today_data.total_completed_vax / scale_;
-    int vaccinated = 0;
 
     while ((pop_.size() - un_vaxxed_.size()) < to_be_vaxxed) {
         // Pick someone at random to get a vax_history
@@ -262,6 +255,7 @@ void sim::StateSimulator::InitializeVaccines(const std::unordered_map<int, data:
 void sim::StateSimulator::ApplyTodaysVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines) {
     ApplyVaccines(vaccines, today_);
 }
+
 
 
 
