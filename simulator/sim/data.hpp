@@ -116,7 +116,7 @@ namespace sim::data {
         std::unordered_map<std::string, std::unordered_map<int, KnownCaseHistory>> known_case_history;
         std::unordered_map<std::string, std::unordered_map<int, VaccineHistory>> vax_history;
         std::unordered_map<std::string, StateInfo> state_info;
-        std::vector<VariantRecord> variant_history;
+        std::unordered_map<std::string, std::vector<VariantRecord>> variant_history;
     };
 
     void from_json(const nlohmann::json &j, ProgramInput &i);

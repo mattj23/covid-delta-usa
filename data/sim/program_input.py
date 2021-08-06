@@ -31,7 +31,7 @@ class ProgramInput:
     test_history: Optional[Dict[str, StateHistory]] = None
     infected_history: Optional[Dict[str, StateEstimates]] = None
     vax_history: Optional[Dict[str, StateVaccineHistory]] = None
-    variant_history: Optional[List[Dict]] = None
+    variant_history: Optional[Dict[str, List[Dict]]] = None
 
     def write(self, file_name: str):
         output = {
@@ -54,14 +54,18 @@ class ProgramInput:
             handle.write(json.dumps(output, indent=2))
 
 
-def _prep_variant_history(data: Optional[List[Dict]]) -> List:
-    prepared = []
-    if data is None:
-        return prepared
+def _prep_variant_history(variant_data: Optional[Dict[str, List[Dict]]]) -> Dict[str, List]:
+    all_prepared = {}
+    if variant_data is None:
+        return all_prepared
 
-    for row in data:
-        prepared.append({"date": row["date"].strftime("%Y-%m-%d"), "variants": row["variants"]})
-    return prepared
+    for state, data in variant_data.items():
+        prepared = []
+        for row in data:
+            prepared.append({"date": row["date"].strftime("%Y-%m-%d"), "variants": row["variants"]})
+        all_prepared[state] = prepared
+
+    return all_prepared
 
 
 def _prep_state_info(data: Dict[str, StateInfo]) -> Dict:

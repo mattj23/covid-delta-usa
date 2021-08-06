@@ -64,7 +64,7 @@ def delta_variant_incubation() -> List[float]:
 
     days = []
     for i in range(21):
-        scaled = i * 3 / 2.0    # Scale the domain variable larger to shrink the space
+        scaled = i * 3 / 2.0  # Scale the domain variable larger to shrink the space
         days.append(scipy.stats.exponweib.cdf(scaled, a, c, 0, scale))
 
     return days
@@ -97,11 +97,63 @@ def alpha_infectivity_curve() -> DiscreteFunction:
     return DiscreteFunction(offset, values)
 
 
+def custom_infectivity_curve(shape: float, rate: float, shift: float) -> DiscreteFunction:
+    """
+    Produces a custom infectivity curve based on a gamma distribution
+    """
+    limit = 0.0005
+
+    # Start by walking backwards until we hit the limit
+    values = []
+    median = round(scipy.stats.gamma.median(shape, -shift, 1 / rate))
+    position = median
+    traveled = 0
+
+    value = scipy.stats.gamma.pdf(position, shape, -shift, 1/rate)
+    while value > limit:
+        values.append(value)
+        traveled += 1
+        position -= 1
+        value = scipy.stats.gamma.pdf(position, shape, -shift, 1/rate)
+
+    values.reverse()
+
+    position = median + 1
+    value = scipy.stats.gamma.pdf(position, shape, -shift, 1/rate)
+    while value > limit:
+        values.append(value)
+        position += 1
+        value = scipy.stats.gamma.pdf(position, shape, -shift, 1/rate)
+
+    return DiscreteFunction(traveled - median - 1, values)
+
+
+
+
+
+
+
+
+    # Generate an inverse cdf table
+    offset = 10
+    total_days = 20
+    values = []
+    for i in range(total_days):
+        y = scipy.stats.gamma.pdf(i - offset, shape, -shift, 1 / rate)
+        values.append(y)
+
+    # The last value in the infectivity curve MUST be 0, otherwise the simulation will not be able to efficiently
+    # remove infected individuals after they stop being contagious
+    values.append(0)
+
+    return DiscreteFunction(offset, values)
+
+
 def delta_infectivity_curve() -> DiscreteFunction:
     """
     The delta variant's infectivity curve is currently estimated by scaling the alpha curve by a factor of 3
     """
-    return alpha_infectivity_curve().scale_by(3)
+    return alpha_infectivity_curve().scale_y(3)
 
 
 def natural_alpha_efficacy() -> DiscreteFunction:

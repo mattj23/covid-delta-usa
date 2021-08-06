@@ -4,8 +4,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, asdict
-from typing import List, Dict
+from typing import List, Dict, Tuple, Optional
+
+import numpy
 import numpy as np
+from matplotlib.axes._axes import Axes
+from scipy.interpolate import interp1d
 
 
 @dataclass
@@ -13,8 +17,32 @@ class DiscreteFunction:
     offset: int
     values: List[float]
 
-    def scale_by(self, factor: float) -> DiscreteFunction:
+    def _to_arrays(self) -> Tuple[np.array, np.array]:
+        x, y = [np.array(p) for p in zip(*enumerate(self.values))]
+        return x - self.offset, y
+
+    def plot(self, ax: Axes, color: Optional[str], linewidth: Optional[int], label: Optional[str]):
+        x, y = self._to_arrays()
+        kwargs = {}
+        if linewidth is not None:
+            kwargs["linewidth"] = linewidth
+        if color is not None:
+            kwargs["color"] = color
+        if label is not None:
+            kwargs["label"] = label
+        ax.plot(x, y, **kwargs)
+
+    def scale_y(self, factor: float) -> DiscreteFunction:
         return DiscreteFunction(self.offset, [y * factor for y in self.values])
+
+    def scale_x(self, factor_array: List[float]) -> DiscreteFunction:
+        assert len(factor_array) == len(self.values)
+        x, y = self._to_arrays()
+        x_ = np.multiply(x, factor_array)
+        f = interp1d(x_, y)
+        x__ = np.arange(min(x_), max(x_))
+        offset = round(self.offset * factor_array[self.offset])
+        return DiscreteFunction(offset, list(f(x__)))
 
     def mean_filter(self, window_size: int) -> DiscreteFunction:
         values = np.array(self.values)

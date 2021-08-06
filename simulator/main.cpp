@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     for (int run = 0; run < input.run_count; ++run) {
         // Initialize the population from the beginning
         state->InitializePopulation(input.infected_history[input.state],
-                                    input.variant_history, variants,
+                                    input.variant_history[input.state], variants,
                                     input.start_day);
 
         if (!input.vax_history.empty()) {

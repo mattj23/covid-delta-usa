@@ -4,109 +4,102 @@
 """
 from typing import List, Dict, Optional
 
-import numpy
 import numpy as np
 from datetime import date as Date
 from datetime import timedelta as TimeDelta
 
 import settings
-from states import state_abbrevs
 from sim.dynamics import VariantProperties, DiscreteFunction, WorldProperties
-from history.estimates import StateEstimates, DailyEstimate
-from history.states import StateInfo
 from sim import default_world_properties, ProgramInput, Simulator
+from sim.world_defaults import custom_infectivity_curve
 from history import (load_state_estimates, load_state_histories, load_state_info, load_variant_history,
-                     load_vaccine_histories)
+                     load_vaccine_histories, StateEstimates, DailyEstimate, StateInfo)
 
-import scipy.interpolate
 import matplotlib.pyplot as plt
 from matplotlib.pyplot import Figure
 from matplotlib.axes._axes import Axes
 
 
 def main():
+    state = "TN"
+    contact_prob = 1.45
+    start_date = Date(2020, 10, 15)
+    end_date = Date(2020, 12, 15)
+    plot_start = Date(2020, 9, 15)  # input_data.start_day - TimeDelta(days=5)
+    # plot_start = input_data.start_day
+    plot_end = end_date
+
+    state_info = load_state_info()
+    infected_history = load_state_estimates()
+
     # Create some world properties
     properties = default_world_properties()
 
-    # Accumulate the whole USA into one population
-    state_info = load_state_info()
-    estimates = load_state_estimates()
+    fig: Figure = plt.figure(figsize=(12, 6*3))
+    fig.subplots_adjust(top=0.95, bottom=0.05)
+    ax0, ax1, ax2 = fig.subplots(3)
 
-    infected_history = StateEstimates("USA", {})
-    all_dates = set()
-    for state in state_abbrevs():
-        for k in estimates[state].estimates.keys():
-            all_dates.add(k)
-
-    working_date = min(all_dates)
-    latest_date = max(all_dates)
-    while working_date <= latest_date:
-        daily = DailyEstimate(0, 0, 0, 0, 0, 0)
-        for state in state_abbrevs():
-            if working_date not in estimates[state].estimates:
-                continue
-
-            daily.cases += estimates[state].estimates[working_date].cases
-            daily.diagnoses += estimates[state].estimates[working_date].diagnoses
-            daily.infections += estimates[state].estimates[working_date].infections
-            daily.total_cases += estimates[state].estimates[working_date].total_cases
-            daily.total_diagnoses += estimates[state].estimates[working_date].total_diagnoses
-            daily.total_infections += estimates[state].estimates[working_date].total_infections
-
-        infected_history.estimates[working_date] = daily
-        working_date += TimeDelta(days=1)
-
-    usa_info = StateInfo("USA", 0, [])
-    for state in state_abbrevs():
-        usa_info.population += state_info[state].population
-
-    input_data = ProgramInput(
-        output_file=settings.default_output_file,
-        state="USA",
-        world_properties=properties,
-        start_day=Date(2020, 11, 1),
-        end_day=Date(2021, 8, 1),
-        contact_prob=2.16,
-        state_info={"USA": usa_info},
-        population_scale=1000,
-        vax_history=load_vaccine_histories(),
-        variant_history=load_variant_history(),
-        infected_history={"USA": infected_history},
-        run_count=5
-    )
-
-    simulator = Simulator(input_data, settings.default_input_file)
-    result = simulator.run()
-
-    plot_start = Date(2020, 6, 1)  # input_data.start_day - TimeDelta(days=5)
-    # plot_start = input_data.start_day
-    plot_end = input_data.end_day
-
-    print(f"took {result.run_time:0.2f}s to run")
-
-    fig: Figure = plt.figure(figsize=(12, 12))
-
-    ax0, ax1 = fig.subplots(2)
     ax0: Axes
-    ax1: Axes
-    ax0.set_title(
-        f"Simulated {input_data.state} against Covidestim.org Infection Estimates ({input_data.contact_prob:0.2f} contact probability)")
+
+    ax0.set_title(f"Simulated {state} against Covidestim.org Infection Estimates ({contact_prob:0.2f} contact probability)")
     ax0.set_xlabel("Date")
-    ax0.set_ylabel(f"Infected People (Pop={input_data.state_info[input_data.state].population / 1e6:0.1f}M)")
+    ax0.set_ylabel(f"Infected People (Pop={state_info[state].population / 1e6:0.1f}M)")
 
-    plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
-    plt_i = input_data.infected_history[input_data.state].get_plottable(plot_start, plot_end)
-
-    ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor="orange", alpha=0.5)
+    plt_i = infected_history[state].get_plottable(plot_start, plot_end)
     ax0.plot(plt_i.dates, plt_i.total_infections, "deeppink", linewidth=3, label="Covidestim.org Infections")
-    ax0.plot(plt_r.dates, plt_r.total_infections.mean, "darkorange", linewidth=2, label="Simulated Total Infections w/ Delta")
 
-    ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor="gold", alpha=0.5)
-    ax1.plot(plt_i.dates, plt_i.infections, "coral", linewidth=3, label="Covidestim.org Daily Infections")
-    ax1.plot(plt_r.dates, plt_r.new_infections.mean, "goldenrod", linewidth=2, label="Simulated Daily Infections")
+    ax1: Axes
     ax1.set_title("Daily Infections")
     ax1.set_ylabel("People")
+    ax1.plot(plt_i.dates, plt_i.infections, "coral", linewidth=3, label="Covidestim.org Daily Infections")
+
+    ax2: Axes
+    ax2.set_title("Infection Curve")
+    properties.alpha.infectivity.plot(ax2, color="darkorange", linewidth=3, label="Ashcroft et al.")
+    ax2.set_xlabel("Days from symptom onset")
+    ax2.set_ylabel("Relative infectivity")
+
+
+    # Screw with the infection curve
+    shape, rate, shift = 97.18750, 3.71875, 25.6250
+    # c1 = custom_infectivity_curve(97, 1.71875, 50) # really lagged
+    c1 = custom_infectivity_curve(97, 2.71875, 33)
+    c1.plot(ax2, "lightblue", 3, "Lagged curve")
+
+    bundles = [dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="darkorange"),
+               dict(curve=c1, label="Lagged curve", color="lightblue")]
+
+    for bundle in bundles:
+        properties.alpha.infectivity = bundle["curve"]
+        input_data = ProgramInput(
+            output_file=settings.default_output_file,
+            state=state,
+            world_properties=properties,
+            start_day=start_date,
+            end_day=end_date,
+            contact_prob=contact_prob,
+            state_info=load_state_info(),
+            population_scale=50,
+            vax_history=load_vaccine_histories(),
+            variant_history=load_variant_history(),
+            infected_history=load_state_estimates(),
+            run_count=20
+        )
+
+        simulator = Simulator(input_data, settings.default_input_file)
+        result = simulator.run()
+
+        print(f"took {result.run_time:0.2f}s to run")
+
+        plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
+        ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=bundle['color'], alpha=0.5)
+        ax0.plot(plt_r.dates, plt_r.total_infections.mean, bundle['color'], linewidth=2, label=bundle['label'])
+        ax1.plot(plt_r.dates, plt_r.new_infections.mean, bundle['color'], linewidth=2, label=bundle['label'])
+        ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=bundle['color'], alpha=0.5)
+
+    ax0.legend()
     ax1.legend()
+    ax2.legend()
     fig.show()
 
 
