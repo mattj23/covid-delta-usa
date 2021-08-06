@@ -24,7 +24,7 @@ def main():
     state = "TN"
     contact_prob = 1.45
     start_date = Date(2020, 10, 15)
-    end_date = Date(2020, 12, 15)
+    end_date = Date(2021, 2, 15)
     plot_start = Date(2020, 9, 15)  # input_data.start_day - TimeDelta(days=5)
     # plot_start = input_data.start_day
     plot_end = end_date
@@ -66,8 +66,11 @@ def main():
     c1 = custom_infectivity_curve(97, 2.71875, 33)
     c1.plot(ax2, "lightblue", 3, "Lagged curve")
 
-    bundles = [dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="darkorange"),
-               dict(curve=c1, label="Lagged curve", color="lightblue")]
+    bundles = [
+        dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="darkorange", contact=1.95),
+        dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="lightgreen", contact=2.15),
+        dict(curve=c1, label="Lagged curve", color="lightblue", contact=1.45)
+               ]
 
     for bundle in bundles:
         properties.alpha.infectivity = bundle["curve"]
@@ -77,7 +80,7 @@ def main():
             world_properties=properties,
             start_day=start_date,
             end_day=end_date,
-            contact_prob=contact_prob,
+            contact_prob=bundle['contact'],
             state_info=load_state_info(),
             population_scale=50,
             vax_history=load_vaccine_histories(),
@@ -91,10 +94,12 @@ def main():
 
         print(f"took {result.run_time:0.2f}s to run")
 
+        label = f"{bundle['label']}, p={bundle['contact']}"
+
         plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
         ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=bundle['color'], alpha=0.5)
-        ax0.plot(plt_r.dates, plt_r.total_infections.mean, bundle['color'], linewidth=2, label=bundle['label'])
-        ax1.plot(plt_r.dates, plt_r.new_infections.mean, bundle['color'], linewidth=2, label=bundle['label'])
+        ax0.plot(plt_r.dates, plt_r.total_infections.mean, bundle['color'], linewidth=2, label=label)
+        ax1.plot(plt_r.dates, plt_r.new_infections.mean, bundle['color'], linewidth=2, label=label)
         ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=bundle['color'], alpha=0.5)
 
     ax0.legend()
