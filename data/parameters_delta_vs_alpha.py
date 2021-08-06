@@ -24,7 +24,7 @@ def main():
     state = "TN"
     contact_prob = 1.45
     start_date = Date(2020, 10, 15)
-    end_date = Date(2021, 2, 15)
+    end_date = Date(2021, 4, 15)
     plot_start = Date(2020, 9, 15)  # input_data.start_day - TimeDelta(days=5)
     # plot_start = input_data.start_day
     plot_end = end_date
@@ -68,7 +68,7 @@ def main():
 
     bundles = [
         dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="darkorange", contact=1.95),
-        dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="lightgreen", contact=2.15),
+        dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="lightgreen", contact=2.2),
         dict(curve=c1, label="Lagged curve", color="lightblue", contact=1.45)
                ]
 
