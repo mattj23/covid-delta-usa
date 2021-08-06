@@ -44,6 +44,24 @@ class DiscreteFunction:
         offset = round(self.offset * factor_array[self.offset])
         return DiscreteFunction(offset, list(f(x__)))
 
+    def scale_x_positive(self, starting_x: int, scale_factor, kind="linear") -> DiscreteFunction:
+        x, y = self._to_arrays()
+        working = 0
+        while working < len(x):
+            original = x[working]
+            if original >= starting_x:
+                span = original - starting_x
+                x[working] = original + scale_factor * span
+            working += 1
+
+        f = interp1d(x, y, kind=kind)
+        x__ = np.arange(min(x), max(x))
+        return DiscreteFunction(self.offset, list(f(x__)))
+
+    def normalize_area(self) -> DiscreteFunction:
+        area = sum(self.values)
+        return self.scale_y(1/area)
+
     def mean_filter(self, window_size: int) -> DiscreteFunction:
         values = np.array(self.values)
         filtered = []
