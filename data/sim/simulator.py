@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from typing import Dict, List, Optional, Callable, Tuple
+from typing import Dict, List, Optional, Callable, Tuple, Union
 
 import numpy
 
@@ -19,6 +19,30 @@ class ValueDistribution:
     mean: List[float]
     upper: List[float]
     lower: List[float]
+
+    def __truediv__(self, other: ValueDistribution) -> ValueDistribution:
+        t = ValueDistribution([], [], [])
+        assert len(self.mean) == len(other.mean)
+        for i in range(len(self.mean)):
+            t.mean.append(self.mean[i] / other.mean[i])
+            t.upper.append(self.upper[i] / other.upper[i])
+            t.lower.append(self.lower[i] / other.lower[i])
+        return t
+
+    def __mul__(self, other: Union[float, ValueDistribution]) -> ValueDistribution:
+        if isinstance(other, float):
+            return ValueDistribution(numpy.array(self.mean) * other,
+                                     numpy.array(self.upper) * other,
+                                     numpy.array(self.lower) * other)
+
+        if isinstance(other, ValueDistribution):
+            t = ValueDistribution([], [], [])
+            assert len(self.mean) == len(other.mean)
+            for i in range(len(self.mean)):
+                t.mean.append(self.mean[i] * other.mean[i])
+                t.upper.append(self.upper[i] * other.upper[i])
+                t.lower.append(self.lower[i] * other.lower[i])
+            return t
 
 
 @dataclass
@@ -127,10 +151,16 @@ class SimulationResult:
         upper_ = []
         lower_ = []
         for dist in distributions:
+            if not dist:
+                continue
             d = numpy.array(dist)
             mean_.append(numpy.mean(d))
-            upper_.append(numpy.quantile(d, 0.95))
-            lower_.append(numpy.quantile(d, 0.05))
+            if max(d) - min(d) == 0:
+                upper_.append(d[0])
+                lower_.append(d[0])
+            else:
+                upper_.append(numpy.quantile(d, 0.95))
+                lower_.append(numpy.quantile(d, 0.05))
 
         return ValueDistribution(mean_, upper_, lower_)
 

@@ -29,32 +29,36 @@ int main(int argc, char **argv) {
     const auto &state_info = input.state_info[input.state];
 
     auto state = std::make_shared<sim::StateSimulator>(state_info.population, input.population_scale, &variants);
+    state->SetOptions(&input.options);
 
     auto start = std::chrono::system_clock::now();
 
     printf(" * starting simulation\n");
     std::vector<sim::data::StateResult> results;
     for (int run = 0; run < input.run_count; ++run) {
-        // Initialize the population from the beginning
-        state->InitializePopulation(input.infected_history[input.state],
-                                    input.variant_history[input.state],
-                                    input.start_day);
+        results.emplace_back();
+        results.back().name = input.state;
 
-        if (!input.vax_history.empty()) {
-            state->InitializeVaccines(input.vax_history[input.state], input.start_day);
+        // Initialize the population from the beginning
+        auto init_result = state->InitializePopulation(input.infected_history[input.state],
+                                                       input.vax_history[input.state],
+                                                       input.variant_history[input.state],
+                                                       input.start_day);
+
+        if (!init_result.empty()) {
+            for (const auto& r : init_result) {
+                results.back().results.push_back(r);
+            }
         }
 
         state->SetProbabilities(input.contact_probability);
-
-        results.emplace_back();
-        results.back().name = input.state;
 
         auto today = input.start_day;
         while (today < input.end_day) {
             results.back().results.push_back(state->GetStepResult());
 
             // Add the newly vaccinated
-            if (!input.vax_history.empty()) state->ApplyTodaysVaccines(input.vax_history[input.state]);
+            if (!input.vax_history.empty()) state->ApplyVaccines(input.vax_history[input.state]);
 
             // Simulate the day's events
             state->SimulateDay();

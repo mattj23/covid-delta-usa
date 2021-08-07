@@ -9,11 +9,11 @@
 #include <vector>
 
 namespace sim {
-    using VariantDictionary = std::unordered_map<data::Variant, std::unique_ptr<VariantProbabilities>>;
+using VariantDictionary = std::unordered_map<data::Variant, std::unique_ptr<VariantProbabilities>>;
 
 class StateSimulator {
   public:
-    StateSimulator(long population, int scale, VariantDictionary* variants);
+    StateSimulator(long population, int scale, VariantDictionary *variants);
 
     /** @brief Reset all of the population data, bringing them back to their state pre-pandemic
      */
@@ -24,20 +24,18 @@ class StateSimulator {
      * @param history
      * @param up_to
      */
-    void InitializePopulation(const std::unordered_map<int, data::InfectedHistory> &history,
-                              const std::vector<data::VariantRecord> &variant_history,
-                              std::optional<date::sys_days> up_to = {});
+    std::vector<data::StepResult> InitializePopulation(const std::unordered_map<int, data::InfectedHistory> &history,
+                                                       const std::unordered_map<int, data::VaccineHistory> &vaccines,
+                                                       const std::vector<data::VariantRecord> &variant_history,
+                                                       std::optional<date::sys_days> up_to = {});
 
-    void InitializeVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines,
-                            std::optional<date::sys_days> up_to = {});
 
     void SetProbabilities(double p_self);
     inline void SetOptions(data::ProgramOptions *options) { options_ = options; }
 
     void SimulateDay();
 
-    void ApplyVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines, int for_date);
-    void ApplyTodaysVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines);
+    void ApplyVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines);
 
     inline int TotalInfections() const { return total_infections_ * scale_; }
     inline int TotalVaccinated() const { return total_vaccinated_ * scale_; }
@@ -50,7 +48,6 @@ class StateSimulator {
     inline int NaturalSaves() const { return natural_saves_ * scale_; }
 
     data::StepResult GetStepResult() const;
-
 
   private:
     int scale_{};
@@ -74,8 +71,8 @@ class StateSimulator {
     std::unique_ptr<std::binomial_distribution<int>> self_contact_dist_{};
     std::unique_ptr<std::uniform_int_distribution<int>> selector_dist_{};
 
-    VariantDictionary* variants_{};
-    data::ProgramOptions* options_{};
+    VariantDictionary *variants_{};
+    data::ProgramOptions *options_{};
 
     void SynchronizeUnVaxxedCache();
     void InfectPerson(size_t person_index, const VariantProbabilities &variant);

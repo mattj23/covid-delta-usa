@@ -21,7 +21,7 @@ from matplotlib.axes._axes import Axes
 
 
 def main():
-    state = "WA"
+    state = "CO"
     start_date = Date(2021, 6, 20) # Corresponds with a collection bin
     end_date = Date(2021, 7, 17)
     plot_start = Date(2021, 5, 15)  # input_data.start_day - TimeDelta(days=5)
@@ -36,7 +36,7 @@ def main():
 
     fig: Figure = plt.figure(figsize=(12, 6*4))
     fig.subplots_adjust(top=0.95, bottom=0.05)
-    ax0, ax1, ax2, ax3 = fig.subplots(4)
+    ax0, ax1, ax2 = fig.subplots(3)
 
     ax0: Axes
     ax0.set_title(f"Simulated {state} against Covidestim.org Infection Estimates")
@@ -44,12 +44,12 @@ def main():
     ax0.set_ylabel(f"Infected People (Pop={state_info[state].population / 1e6:0.1f}M)")
 
     plt_i = infected_history[state].get_plottable(plot_start, plot_end)
-    ax0.plot(plt_i.dates, plt_i.total_infections, "deeppink", linewidth=3, label="Covidestim.org Infections")
+    ax0.plot(plt_i.dates, plt_i.total_infections, "deeppink", linewidth=5, label="Covidestim.org Infections")
 
     ax1: Axes
     ax1.set_title("Daily Infections")
     ax1.set_ylabel("People")
-    ax1.plot(plt_i.dates, plt_i.infections, "coral", linewidth=3, label="Covidestim.org Daily Infections")
+    ax1.plot(plt_i.dates, plt_i.infections, "deeppink", linewidth=5, label="Covidestim.org Daily Infections")
 
     ax2: Axes
     ax2.set_title("Proportion of Delta variant in region, 2-wk new case bins")
@@ -91,7 +91,7 @@ def main():
                ]
 
     # properties.delta.vax_immunity = properties.alpha.vax_immunity.scale_y(0.8)
-    plot_vaccine_immunity(ax3)
+    # plot_vaccine_immunity(ax3)
 
     for bundle in bundles:
         delta_scale = bundle['factor']
@@ -102,14 +102,15 @@ def main():
             world_properties=properties,
             start_day=start_date,
             end_day=end_date,
-            contact_prob=1.8,
+            contact_prob=1.2,
             state_info=load_state_info(),
-            population_scale=50,
+            population_scale=10,
             vax_history=load_vaccine_histories(),
             variant_history=load_variant_history(),
             infected_history=load_state_estimates(),
             run_count=20
         )
+        input_data.options.full_history = True
 
         simulator = Simulator(input_data, settings.default_input_file)
         result = simulator.run()
@@ -123,7 +124,8 @@ def main():
 
         new_delta = zip(plt_r.dates, plt_r.new_delta_infections.mean)
         new_all = zip(plt_r.dates, plt_r.new_infections.mean)
-        bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history if k['date'] > start_date and k['date'] <= end_date}
+        # bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history if k['date'] > start_date and k['date'] <= end_date}
+        bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history}
         dates = sorted(bins.keys())
         for date, cases in new_delta:
             for d in dates:
@@ -134,17 +136,22 @@ def main():
                 if date <= d:
                     bins[d]["total"] += cases
 
-        ratio_x, ratio_y = zip(*sorted((k, v["delta"] / v["total"]) for k, v in bins.items()))
+        ratio_x, ratio_y = zip(*sorted((k, v["delta"] / v["total"]) for k, v in bins.items() if v["total"]))
         ax2.plot(ratio_x, ratio_y, "teal", linewidth=2, label=f"Simulated {delta_scale:0.2f}x Infectivity", marker="x")
+        ratio = plt_r.new_delta_infections / plt_r.new_infections
+        ax2.plot(plt_r.dates, ratio.mean, "mediumpurple", label="New infections delta ratio")
+        ax2.plot([start_date, start_date], [0, 1], "lightcoral", linestyle="--")
 
 
-
-
+        # Cumulative infections
         ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=color, alpha=0.5)
         ax0.plot(plt_r.dates, plt_r.total_infections.mean, color, linewidth=2, label=label)
 
+        # Daily infections
         ax1.plot(plt_r.dates, plt_r.new_infections.mean, color, linewidth=2, label=label)
         ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=color, alpha=0.5)
+        ax1.plot(plt_r.dates, plt_r.new_delta_infections.mean, "cyan", linewidth=2, label="Daily delta infections")
+        ax1.fill_between(plt_r.dates, plt_r.new_delta_infections.mean, 0, facecolor="cyan", alpha=0.5)
 
     ax0.legend()
     ax1.legend()
