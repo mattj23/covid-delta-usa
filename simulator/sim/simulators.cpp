@@ -268,11 +268,14 @@ sim::data::StepResult sim::StateSimulator::GetStepResult() const {
     step.virus_carriers = static_cast<int>(infectious_.size());
 
     // Expensive summary statistics
-    step.population_infectiousness = 0;
-    for (auto index : infectious_) {
-        const auto& person = pop_[index];
-        step.population_infectiousness += variants_->at(person.variant)->GetInfectivity(today_ - person.symptom_onset);
+    if (false) {
+        step.population_infectiousness = 0;
+        for (auto index : infectious_) {
+            const auto& person = pop_[index];
+            step.population_infectiousness += variants_->at(person.variant)->GetInfectivity(today_ - person.symptom_onset);
+        }
     }
+
     return step;
 }
 
