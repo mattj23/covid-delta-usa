@@ -13,7 +13,7 @@ namespace sim {
 
 class StateSimulator {
   public:
-    StateSimulator(long population, int scale);
+    StateSimulator(long population, int scale, VariantDictionary* variants);
 
     /** @brief Reset all of the population data, bringing them back to their state pre-pandemic
      */
@@ -26,15 +26,15 @@ class StateSimulator {
      */
     void InitializePopulation(const std::unordered_map<int, data::InfectedHistory> &history,
                               const std::vector<data::VariantRecord> &variant_history,
-                              const VariantDictionary &variants,
                               std::optional<date::sys_days> up_to = {});
 
     void InitializeVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines,
                             std::optional<date::sys_days> up_to = {});
 
     void SetProbabilities(double p_self);
+    inline void SetOptions(data::ProgramOptions *options) { options_ = options; }
 
-    void SimulateDay(const VariantDictionary &variants);
+    void SimulateDay();
 
     void ApplyVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines, int for_date);
     void ApplyTodaysVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines);
@@ -73,6 +73,9 @@ class StateSimulator {
 
     std::unique_ptr<std::binomial_distribution<int>> self_contact_dist_{};
     std::unique_ptr<std::uniform_int_distribution<int>> selector_dist_{};
+
+    VariantDictionary* variants_{};
+    data::ProgramOptions* options_{};
 
     void SynchronizeUnVaxxedCache();
     void InfectPerson(size_t person_index, const VariantProbabilities &variant);

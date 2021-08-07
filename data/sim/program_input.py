@@ -13,6 +13,10 @@ from history.states import StateHistory, StateInfo
 from history.vaccine import StateVaccineHistory
 from sim.dynamics import WorldProperties, prepare_world_properties
 
+@dataclass
+class ProgramOptions:
+    full_history: bool
+    expensive_stats: bool
 
 @dataclass
 class ProgramInput:
@@ -26,6 +30,7 @@ class ProgramInput:
     contact_prob: float
     world_properties: WorldProperties
     state_info: Dict[str, StateInfo]
+    options: ProgramOptions = ProgramOptions(False, False)
     population_scale: Optional[int] = 10
     run_count: Optional[int] = 1
     test_history: Optional[Dict[str, StateHistory]] = None
@@ -43,6 +48,7 @@ class ProgramInput:
             "contact_probability": self.contact_prob,
             "population_scale": self.population_scale,
             "run_count": self.run_count,
+            "options": asdict(self.options),
             "infected_history": _prep_estimates(self.infected_history),
             "vax_history": _prep_vaccines(self.vax_history),
             "test_history": _prep_history(self.test_history),

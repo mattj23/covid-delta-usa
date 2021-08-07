@@ -63,6 +63,8 @@ namespace sim::data {
         int natural_saves;
         int vaccinated_infections;
         int virus_carriers;
+
+        double population_infectiousness;
     };
 
     struct StateResult {
@@ -107,6 +109,13 @@ namespace sim::data {
 
     void from_json(const nlohmann::json &j, WorldProperties &w);
 
+    struct ProgramOptions {
+        bool full_history = false;
+        bool expensive_stats = false;
+    };
+
+    void from_json(const nlohmann::json &j, ProgramOptions &o);
+
     struct ProgramInput {
         date::sys_days start_day;
         date::sys_days end_day;
@@ -115,6 +124,7 @@ namespace sim::data {
         double contact_probability;
         int population_scale;
         int run_count;
+        ProgramOptions options;
         WorldProperties world_properties;
         std::unordered_map<std::string, std::unordered_map<int, InfectedHistory>> infected_history;
         std::unordered_map<std::string, std::unordered_map<int, KnownCaseHistory>> known_case_history;

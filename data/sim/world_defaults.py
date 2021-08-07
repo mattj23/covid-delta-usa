@@ -125,6 +125,8 @@ def custom_infectivity_curve(shape: float, rate: float, shift: float) -> Discret
         position += 1
         value = scipy.stats.gamma.pdf(position, shape, -shift, 1/rate)
 
+    values[0] = 0
+    values[-1] = 0
     return DiscreteFunction(traveled - median - 1, values)
 
 

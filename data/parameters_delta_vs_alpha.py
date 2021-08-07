@@ -21,10 +21,10 @@ from matplotlib.axes._axes import Axes
 
 
 def main():
-    state = "IL"
-    start_date = Date(2020, 9, 1)
-    end_date = Date(2020, 10, 15)
-    plot_start = Date(2020, 8, 15)  # input_data.start_day - TimeDelta(days=5)
+    state = "PA"
+    start_date = Date(2020, 7, 1)
+    end_date = Date(2020, 12, 15)
+    plot_start = Date(2020, 6, 15)  # input_data.start_day - TimeDelta(days=5)
     # plot_start = input_data.start_day
     plot_end = end_date
 
@@ -33,6 +33,7 @@ def main():
 
     # Create some world properties
     properties = default_world_properties()
+
     # properties.alpha.natural_immunity = DiscreteFunction.zero()
 
     fig: Figure = plt.figure(figsize=(12, 6*3))
@@ -63,18 +64,18 @@ def main():
 
     # Screw with the infection curve
     shape, rate, shift = 97.18750, 3.71875, 25.6250
-    # c1 = custom_infectivity_curve(97, 1.71875, 50) # really lagged
+    c1 = custom_infectivity_curve(97, 1.71875, 50) # really lagged
     # c1 = custom_infectivity_curve(97, 2.71875, 33)
-    c1 = custom_infectivity_curve(97, 3.2, 29)
+    # c1 = custom_infectivity_curve(97, 3.2, 29)
     c1.plot(ax2, "lightblue", 3, "Lagged curve")
 
     # fig.show()
     # return
 
     bundles = [
-        # dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="darkorange", contact=1.8),
+        dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="darkorange", contact=1.05),
         # dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="lightgreen", contact=2.2),
-        dict(curve=c1, label="Lagged curve", color="lightblue", contact=1.15)
+        dict(curve=c1, label="Lagged curve", color="lightblue", contact=0.95)
                ]
 
     for bundle in bundles:
@@ -89,10 +90,11 @@ def main():
             state_info=load_state_info(),
             population_scale=50,
             vax_history=load_vaccine_histories(),
-            variant_history=load_variant_history(),
+            # variant_history=load_variant_history(),
             infected_history=load_state_estimates(),
             run_count=20
         )
+        input_data.options.full_history = True
 
         simulator = Simulator(input_data, settings.default_input_file)
         result = simulator.run()
@@ -108,8 +110,8 @@ def main():
         ax1.plot(plt_r.dates, plt_r.new_infections.mean, bundle['color'], linewidth=2, label=label)
         ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=bundle['color'], alpha=0.5)
 
-        ax1_.plot(plt_r.dates, plt_r.virus_carriers.mean, "lightgreen", linewidth=2, label="Virus carriers")
-        ax1_.legend()
+        # ax1_.plot(plt_r.dates, plt_r.population_infectiousness.mean, "lightgreen", linewidth=2, label="Virus carriers")
+        # ax1_.legend()
 
     ax0.legend()
     ax1.legend()

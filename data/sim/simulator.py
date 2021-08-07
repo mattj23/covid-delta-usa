@@ -40,6 +40,7 @@ class PlottableSteps:
     new_natural_saves: ValueDistribution
     vaccinated_infections: ValueDistribution
     virus_carriers: ValueDistribution
+    population_infectiousness: ValueDistribution
 
 
 @dataclass
@@ -55,6 +56,7 @@ class StepResult:
     vaccine_saves: int
     natural_saves: int
     virus_carriers: int
+    population_infectiousness: float = 0
     new_infections: int = 0
     new_delta_infections: int = 0
     new_alpha_infections: int = 0
@@ -102,6 +104,7 @@ class SimulationResult:
             new_delta_infections=self._get_high_mean_lo(state, lambda step: step.new_delta_infections, start, end),
             new_alpha_infections=self._get_high_mean_lo(state, lambda step: step.new_alpha_infections, start, end),
             virus_carriers=self._get_high_mean_lo(state, lambda step: step.virus_carriers, start, end),
+            population_infectiousness=self._get_high_mean_lo(state, lambda step: step.population_infectiousness, start, end),
             new_reinfections=self._get_high_mean_lo(state, lambda step: step.new_reinfections, start, end)
         )
 

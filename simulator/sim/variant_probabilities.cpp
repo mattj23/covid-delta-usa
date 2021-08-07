@@ -13,7 +13,7 @@ int sim::VariantProbabilities::GetRandomIncubation(std::mt19937_64 &mt) const {
     std::uniform_real_distribution<double> dist(0, 1);
     auto value = dist(mt);
     for (int i = 0; i < incubation_.size(); ++i) {
-        if (value >= incubation_[i])
+        if (value <= incubation_[i])
             return i;
     }
     return (int)incubation_.size();

@@ -1,11 +1,12 @@
 #include "simulators.hpp"
 
-sim::StateSimulator::StateSimulator(long population, int scale) {
+sim::StateSimulator::StateSimulator(long population, int scale, VariantDictionary* variants) {
     scale_ = scale;
     long scaled_population = population / scale_;
     for (long i = 0; i < scaled_population; ++i) {
         pop_.emplace_back();
     }
+    variants_ = variants;
 
     // At this point we can set the selector distribution
     selector_dist_ = std::make_unique<std::uniform_int_distribution<int>>(0, pop_.size());
@@ -31,7 +32,6 @@ void sim::StateSimulator::Reset() {
 
 void sim::StateSimulator::InitializePopulation(const std::unordered_map<int, data::InfectedHistory> &history,
                                                const std::vector<data::VariantRecord> &variant_history,
-                                               const VariantDictionary &variants,
                                                std::optional<date::sys_days> up_to) {
     // Start by resetting the population completely
     Reset();
@@ -70,10 +70,19 @@ void sim::StateSimulator::InitializePopulation(const std::unordered_map<int, dat
             int to_add = (int)std::round(fraction * (double)total_to_add);
 
             for (int k = 0; k < to_add; ++k) {
-                InfectPerson(infected_pointer, *variants.at(variant));
+                InfectPerson(infected_pointer, *variants_->at(variant));
                 infected_pointer++;
             }
 
+        }
+
+        // Remove anyone who's no longer infectious
+        for (int i = 0; i < infected_pointer; ++i) {
+            const auto& person = pop_[i];
+            int days_from_symptoms = today_ - person.symptom_onset;
+            if (days_from_symptoms > 0 && variants_->at(person.variant)->GetInfectivity(days_from_symptoms) <= 0) {
+                infectious_.erase(i);
+            }
         }
 
         working_day++;
@@ -115,7 +124,7 @@ void sim::StateSimulator::SetProbabilities(double p_self) {
     self_contact_dist_ = std::make_unique<std::binomial_distribution<int>>((int)pop_.size(), normalized_contact_prob);
 }
 
-void sim::StateSimulator::SimulateDay(const VariantDictionary &variants) {
+void sim::StateSimulator::SimulateDay() {
     std::vector<size_t> no_longer_infectious;
     std::vector<std::tuple<size_t, data::Variant>> to_infect;
 
@@ -124,7 +133,7 @@ void sim::StateSimulator::SimulateDay(const VariantDictionary &variants) {
         const auto& carrier = pop_[carrier_index];
 
         // How infectious are they today
-        const auto& variant_info = variants.at(carrier.variant);
+        const auto& variant_info = variants_->at(carrier.variant);
         auto infection_p = variant_info->GetInfectivity(today_ - carrier.symptom_onset);
 
         // Check if this guy has passed the point of being infectious
@@ -175,7 +184,7 @@ void sim::StateSimulator::SimulateDay(const VariantDictionary &variants) {
 
     // Add the newly infected
     for (const auto &[selected, variant] : to_infect) {
-        InfectPerson(selected, *variants.at(variant));
+        InfectPerson(selected, *variants_->at(variant));
     }
 
     today_++;
@@ -257,6 +266,13 @@ sim::data::StepResult sim::StateSimulator::GetStepResult() const {
     step.reinfections = reinfections_ * scale_;
     step.vaccinated_infections =  vaccinated_infections_ * scale_;
     step.virus_carriers = static_cast<int>(infectious_.size());
+
+    // Expensive summary statistics
+    step.population_infectiousness = 0;
+    for (auto index : infectious_) {
+        const auto& person = pop_[index];
+        step.population_infectiousness += variants_->at(person.variant)->GetInfectivity(today_ - person.symptom_onset);
+    }
     return step;
 }
 

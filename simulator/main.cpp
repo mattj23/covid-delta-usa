@@ -28,7 +28,7 @@ int main(int argc, char **argv) {
 
     const auto &state_info = input.state_info[input.state];
 
-    auto state = std::make_shared<sim::StateSimulator>(state_info.population, input.population_scale);
+    auto state = std::make_shared<sim::StateSimulator>(state_info.population, input.population_scale, &variants);
 
     auto start = std::chrono::system_clock::now();
 
@@ -37,7 +37,7 @@ int main(int argc, char **argv) {
     for (int run = 0; run < input.run_count; ++run) {
         // Initialize the population from the beginning
         state->InitializePopulation(input.infected_history[input.state],
-                                    input.variant_history[input.state], variants,
+                                    input.variant_history[input.state],
                                     input.start_day);
 
         if (!input.vax_history.empty()) {
@@ -57,7 +57,7 @@ int main(int argc, char **argv) {
             if (!input.vax_history.empty()) state->ApplyTodaysVaccines(input.vax_history[input.state]);
 
             // Simulate the day's events
-            state->SimulateDay(variants);
+            state->SimulateDay();
 
             // Save the results of the run
 

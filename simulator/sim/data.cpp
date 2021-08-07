@@ -42,7 +42,8 @@ void sim::data::to_json(nlohmann::json &j, const sim::data::StepResult &r) {
             {"virus_carriers", r.virus_carriers},
             {"vaccinated_infections", r.vaccinated_infections},
             {"total_delta_infections", r.total_delta_infections},
-            {"total_alpha_infections", r.total_alpha_infections}
+            {"total_alpha_infections", r.total_alpha_infections},
+            {"population_infectiousness", r.population_infectiousness},
     };
 }
 
@@ -76,6 +77,7 @@ void sim::data::from_json(const nlohmann::json &j, sim::data::ProgramInput &i) {
     j.at("output_file").get_to(i.output_file);
     j.at("variant_history").get_to(i.variant_history);
     j.at("world_properties").get_to(i.world_properties);
+    j.at("options").get_to(i.options);
 
     auto infected_history = j.at("infected_history").get<unordered_map<string, unordered_map<string, InfectedHistory>>>();
     auto test_data = j.at("test_history").get<unordered_map<string, unordered_map<string, KnownCaseHistory>>>();
@@ -148,6 +150,11 @@ void sim::data::from_json(const nlohmann::json &j, sim::data::VariantProperties 
 void sim::data::from_json(const nlohmann::json &j, sim::data::WorldProperties &w) {
     j.at("alpha").get_to(w.alpha);
     j.at("delta").get_to(w.delta);
+}
+
+void sim::data::from_json(const nlohmann::json &j, sim::data::ProgramOptions &o) {
+    j.at("full_history").get_to(o.full_history);
+    j.at("expensive_stats").get_to(o.expensive_stats);
 }
 
 
