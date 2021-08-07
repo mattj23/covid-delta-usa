@@ -33,6 +33,7 @@ def main():
 
     # Create some world properties
     properties = default_world_properties()
+    properties.alpha.natural_immunity = DiscreteFunction.zero()
 
     fig: Figure = plt.figure(figsize=(12, 6*3))
     fig.subplots_adjust(top=0.95, bottom=0.05)

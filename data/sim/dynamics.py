@@ -17,6 +17,10 @@ class DiscreteFunction:
     offset: int
     values: List[float]
 
+    @staticmethod
+    def zero(lower=0, upper=1) -> DiscreteFunction:
+        return DiscreteFunction(0, [0, 0])
+
     def _to_arrays(self) -> Tuple[np.array, np.array]:
         x, y = [np.array(p) for p in zip(*enumerate(self.values))]
         return x - self.offset, y

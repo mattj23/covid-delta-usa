@@ -88,6 +88,10 @@ void sim::StateSimulator::InfectPerson(size_t person_index, const VariantProbabi
         reinfections_++;
     }
 
+    if (person.vaccinated.has_value()) {
+        vaccinated_infections_++;
+    }
+
     person.variant = variant.GetVariant();
     person.infected_day = today_;
     person.symptom_onset = today_ + variant.GetRandomIncubation(prob_.GetGenerator());
@@ -141,23 +145,26 @@ void sim::StateSimulator::SimulateDay(const VariantDictionary &variants) {
             auto contact_index = (*selector_dist_)(prob_.GetGenerator());
             const auto& contact = pop_[contact_index];
 
+            // If the carrier's roll for infection doesn't succeed, continue
+            if (!prob_.UniformChance(infection_p)) continue;
+
+            // At this point the carrier has successfully rolled to infect the contact. Now we will see if the contact
+            // has an immunity which can prevent the infection.
             // Check if they have natural immunity
             if (variant_info->IsPersonNatImmune(contact, today_)) {
-                // Natural immunity preempted the infection check
+                natural_saves_++;
                 continue;
             }
 
             // Check if they have vaccine immunity
             if (variant_info->IsPersonVaxImmune(contact, today_)) {
-                // Vaccine conferred immunity preempted the infection check
+                vaccine_saves_++;
                 continue;
             }
 
             // At this point we know the contacted person is vulnerable to infection, so we roll the dice based
             // on how infectious the carrier is today
-            if (prob_.UniformChance(infection_p)) {
-                to_infect.emplace_back(contact_index, carrier.variant);
-            }
+            to_infect.emplace_back(contact_index, carrier.variant);
         }
     }
 
@@ -242,10 +249,14 @@ sim::data::StepResult sim::StateSimulator::GetStepResult() const {
 
     step.total_infections = total_infections_ * scale_;
     step.total_vaccinated = total_vaccinated_ * scale_;
+    step.vaccine_saves = vaccine_saves_ * scale_;
+    step.natural_saves = natural_saves_ * scale_;
     step.never_infected = never_infected_ * scale_;
     step.total_delta_infections = total_delta_infections_ * scale_;
     step.total_alpha_infections = total_alpha_infections_ * scale_;
     step.reinfections = reinfections_ * scale_;
+    step.vaccinated_infections =  vaccinated_infections_ * scale_;
+    step.virus_carriers = static_cast<int>(infectious_.size());
     return step;
 }
 

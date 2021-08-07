@@ -34,6 +34,12 @@ class PlottableSteps:
     new_alpha_infections: ValueDistribution
     reinfections: ValueDistribution
     new_reinfections: ValueDistribution
+    vaccine_saves: ValueDistribution
+    new_vaccine_saves: ValueDistribution
+    natural_saves: ValueDistribution
+    new_natural_saves: ValueDistribution
+    vaccinated_infections: ValueDistribution
+    virus_carriers: ValueDistribution
 
 
 @dataclass
@@ -45,16 +51,24 @@ class StepResult:
     total_delta_infections: int
     total_alpha_infections: int
     reinfections: int
+    vaccinated_infections: int
+    vaccine_saves: int
+    natural_saves: int
+    virus_carriers: int
     new_infections: int = 0
     new_delta_infections: int = 0
     new_alpha_infections: int = 0
     new_reinfections: int = 0
+    new_natural_saves: int = 0
+    new_vaccine_saves: int = 0
 
     def set_difference_values(self, other: StepResult):
         self.new_infections = self.total_infections - other.total_infections
         self.new_delta_infections = self.total_delta_infections - other.total_delta_infections
         self.new_alpha_infections = self.total_alpha_infections - other.total_alpha_infections
         self.new_reinfections = self.reinfections - other.reinfections
+        self.new_natural_saves = self.natural_saves - other.natural_saves
+        self.new_vaccine_saves = self.vaccine_saves - other.vaccine_saves
 
 
 @dataclass
@@ -79,9 +93,15 @@ class SimulationResult:
             never_infected=self._get_high_mean_lo(state, lambda step: step.never_infected, start, end),
             total_delta_infections=self._get_high_mean_lo(state, lambda step: step.total_delta_infections, start, end),
             total_alpha_infections=self._get_high_mean_lo(state, lambda step: step.total_alpha_infections, start, end),
+            vaccine_saves=self._get_high_mean_lo(state, lambda step: step.vaccine_saves, start, end),
+            natural_saves=self._get_high_mean_lo(state, lambda step: step.natural_saves, start, end),
+            new_vaccine_saves=self._get_high_mean_lo(state, lambda step: step.new_vaccine_saves, start, end),
+            new_natural_saves=self._get_high_mean_lo(state, lambda step: step.new_natural_saves, start, end),
+            vaccinated_infections=self._get_high_mean_lo(state, lambda step: step.vaccinated_infections, start, end),
             reinfections=self._get_high_mean_lo(state, lambda step: step.reinfections, start, end),
             new_delta_infections=self._get_high_mean_lo(state, lambda step: step.new_delta_infections, start, end),
             new_alpha_infections=self._get_high_mean_lo(state, lambda step: step.new_alpha_infections, start, end),
+            virus_carriers=self._get_high_mean_lo(state, lambda step: step.virus_carriers, start, end),
             new_reinfections=self._get_high_mean_lo(state, lambda step: step.new_reinfections, start, end)
         )
 

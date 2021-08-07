@@ -59,6 +59,10 @@ namespace sim::data {
         int total_delta_infections;
         int total_alpha_infections;
         int reinfections;
+        int vaccine_saves;
+        int natural_saves;
+        int vaccinated_infections;
+        int virus_carriers;
     };
 
     struct StateResult {

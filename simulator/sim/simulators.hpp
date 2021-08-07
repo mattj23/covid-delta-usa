@@ -47,6 +47,7 @@ class StateSimulator {
     inline int Reinfections() const { return reinfections_ * scale_; }
 
     inline int VaccineSaves() const { return vaccine_saves_ * scale_; }
+    inline int NaturalSaves() const { return natural_saves_ * scale_; }
 
     data::StepResult GetStepResult() const;
 
@@ -55,6 +56,7 @@ class StateSimulator {
     int scale_{};
     int today_{};
     int vaccine_saves_{};
+    int natural_saves_{};
 
     int total_infections_{};
     int total_vaccinated_{};
@@ -62,6 +64,7 @@ class StateSimulator {
     int total_delta_infections_{};
     int total_alpha_infections_{};
     int reinfections_{};
+    int vaccinated_infections_{};
 
     Probabilities prob_{};
     std::vector<Person> pop_{};

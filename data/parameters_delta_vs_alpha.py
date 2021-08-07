@@ -33,6 +33,7 @@ def main():
 
     # Create some world properties
     properties = default_world_properties()
+    # properties.alpha.natural_immunity = DiscreteFunction.zero()
 
     fig: Figure = plt.figure(figsize=(12, 6*3))
     fig.subplots_adjust(top=0.95, bottom=0.05)
@@ -51,6 +52,7 @@ def main():
     ax1.set_title("Daily Infections")
     ax1.set_ylabel("People")
     ax1.plot(plt_i.dates, plt_i.infections, "coral", linewidth=3, label="Covidestim.org Daily Infections")
+    ax1_: Axes = ax1.twinx()
 
     ax2: Axes
     ax2.set_title("Infection Curve")
@@ -62,13 +64,17 @@ def main():
     # Screw with the infection curve
     shape, rate, shift = 97.18750, 3.71875, 25.6250
     # c1 = custom_infectivity_curve(97, 1.71875, 50) # really lagged
-    c1 = custom_infectivity_curve(97, 2.71875, 33)
+    # c1 = custom_infectivity_curve(97, 2.71875, 33)
+    c1 = custom_infectivity_curve(97, 3.2, 29)
     c1.plot(ax2, "lightblue", 3, "Lagged curve")
 
+    # fig.show()
+    # return
+
     bundles = [
-        dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="darkorange", contact=1.8),
+        # dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="darkorange", contact=1.8),
         # dict(curve=properties.alpha.infectivity, label="Ashcroft et al", color="lightgreen", contact=2.2),
-        # dict(curve=c1, label="Lagged curve", color="lightblue", contact=1.15)
+        dict(curve=c1, label="Lagged curve", color="lightblue", contact=1.15)
                ]
 
     for bundle in bundles:
@@ -98,8 +104,12 @@ def main():
         plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
         ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=bundle['color'], alpha=0.5)
         ax0.plot(plt_r.dates, plt_r.total_infections.mean, bundle['color'], linewidth=2, label=label)
+
         ax1.plot(plt_r.dates, plt_r.new_infections.mean, bundle['color'], linewidth=2, label=label)
         ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=bundle['color'], alpha=0.5)
+
+        ax1_.plot(plt_r.dates, plt_r.virus_carriers.mean, "lightgreen", linewidth=2, label="Virus carriers")
+        ax1_.legend()
 
     ax0.legend()
     ax1.legend()
