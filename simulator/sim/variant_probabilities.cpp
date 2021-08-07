@@ -28,10 +28,10 @@ double sim::VariantProbabilities::GetNaturalImmunity(int days_from_infection) co
 }
 
 bool sim::VariantProbabilities::IsPersonNatImmune(const sim::Person &person, int today) const {
-    return person.IsInfected() && person.natural_immunity_scalar > GetNaturalImmunity(person.infected_day);
+    return person.IsInfected() && person.natural_immunity_scalar <= GetNaturalImmunity(today - person.infected_day);
 }
 
 bool sim::VariantProbabilities::IsPersonVaxImmune(const sim::Person &person, int today) const {
     return person.vaccinated.has_value() &&
-           person.vaccine_immunity_scalar > GetVaxImmunity(today - person.vaccinated.value());
+           person.vaccine_immunity_scalar <= GetVaxImmunity(today - person.vaccinated.value());
 }
