@@ -1,6 +1,6 @@
 #include "simulators.hpp"
 
-sim::StateSimulator::StateSimulator(long population, int scale, VariantDictionary *variants) {
+sim::StateSimulator::StateSimulator(long population, int scale, const VariantDictionary *variants) {
     scale_ = scale;
     long scaled_population = population / scale_;
     for (long i = 0; i < scaled_population; ++i) {

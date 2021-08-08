@@ -157,6 +157,7 @@ void sim::data::from_json(const nlohmann::json &j, sim::data::WorldProperties &w
 void sim::data::from_json(const nlohmann::json &j, sim::data::ProgramOptions &o) {
     j.at("full_history").get_to(o.full_history);
     j.at("expensive_stats").get_to(o.expensive_stats);
+    j.at("mode").get_to(o.mode);
 }
 
 

@@ -11,7 +11,7 @@ import time
 from datetime import date as Date
 from dataclasses import dataclass
 
-from sim.program_input import ProgramInput
+from sim.program_input import ProgramInput, ProgramMode
 
 
 @dataclass
@@ -100,7 +100,7 @@ class StepResult:
 @dataclass
 class SimulationResult:
     run_time: float
-    results: Dict[str, List[List[StepResult]]]
+    results: Union[Dict[str, List[List[StepResult]]], List[float]]
 
     def get_plottable(self, state: str, start: Optional[Date] = None, end: Optional[Date] = None) -> PlottableSteps:
         state_data = self.results[state]
@@ -181,9 +181,7 @@ class Simulator:
         result = self._load_results()
         return SimulationResult(end_time - start_time, result)
 
-    def _load_results(self):
-        with open(self.input_data.output_file, "r") as handle:
-            raw_data = json.load(handle)
+    def _load_simulation_results(self, raw_data) -> Dict[str, List[List[StepResult]]]:
         results = {}
         for row in raw_data:
             state_name = row["name"]
@@ -207,3 +205,13 @@ class Simulator:
             results[state_name].append(run_result[1:])
 
         return results
+
+    def _load_results(self):
+        with open(self.input_data.output_file, "r") as handle:
+            raw_data = json.load(handle)
+
+        if self.input_data.options.mode == ProgramMode.Simulate:
+            return self._load_simulation_results(raw_data)
+
+        if self.input_data.options.mode == ProgramMode.FindContactProb:
+            return raw_data

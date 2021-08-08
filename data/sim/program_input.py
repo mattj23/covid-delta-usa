@@ -3,7 +3,7 @@
 """
 
 import json
-import pickle
+from enum import IntEnum
 from datetime import date as Date
 from dataclasses import dataclass, asdict
 from typing import Dict, List, Optional
@@ -13,10 +13,18 @@ from history.states import StateHistory, StateInfo
 from history.vaccine import StateVaccineHistory
 from sim.dynamics import WorldProperties, prepare_world_properties
 
+
+class ProgramMode(IntEnum):
+    Simulate = 1
+    FindContactProb = 2
+
+
 @dataclass
 class ProgramOptions:
     full_history: bool
     expensive_stats: bool
+    mode: ProgramMode
+
 
 @dataclass
 class ProgramInput:
@@ -30,7 +38,7 @@ class ProgramInput:
     contact_prob: float
     world_properties: WorldProperties
     state_info: Dict[str, StateInfo]
-    options: ProgramOptions = ProgramOptions(False, False)
+    options: ProgramOptions = ProgramOptions(False, False, ProgramMode.Simulate)
     population_scale: Optional[int] = 10
     run_count: Optional[int] = 1
     test_history: Optional[Dict[str, StateHistory]] = None

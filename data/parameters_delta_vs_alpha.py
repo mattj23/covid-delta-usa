@@ -11,6 +11,7 @@ from datetime import timedelta as TimeDelta
 import settings
 from sim.dynamics import VariantProperties, DiscreteFunction, WorldProperties
 from sim import default_world_properties, ProgramInput, Simulator
+from sim.program_input import ProgramMode
 from sim.world_defaults import custom_infectivity_curve
 from history import (load_state_estimates, load_state_histories, load_state_info, load_variant_history,
                      load_vaccine_histories, StateEstimates, DailyEstimate, StateInfo)
@@ -86,8 +87,10 @@ def main():
             infected_history=load_state_estimates(),
             run_count=20
         )
-        input_data.options.full_history = True
+        # input_data.options.full_history = True
 
+        # First, find the contact probability associated with this delta factor
+        input_data.options.mode = ProgramMode.FindContactProb
         simulator = Simulator(input_data, settings.default_input_file)
         result = simulator.run()
 

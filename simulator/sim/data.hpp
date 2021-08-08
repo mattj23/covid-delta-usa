@@ -26,6 +26,11 @@ namespace sim::data {
         Delta
     };
 
+    enum class ProgramMode {
+        Simulate = 1,
+        FindContactProb = 2
+    };
+
     struct StateInfo {
         int population;
         std::vector<std::string> adjacent;
@@ -112,6 +117,7 @@ namespace sim::data {
     struct ProgramOptions {
         bool full_history = false;
         bool expensive_stats = false;
+        ProgramMode mode = ProgramMode::Simulate;
     };
 
     void from_json(const nlohmann::json &j, ProgramOptions &o);
