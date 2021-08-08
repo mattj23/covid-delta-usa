@@ -116,8 +116,9 @@ void sim::data::from_json(const nlohmann::json &j, sim::data::VariantRecord &v) 
 std::unordered_map<sim::data::Variant, double> sim::data::GetVariantFractions(int date,
                                                                               const std::vector<VariantRecord> &variants) {
     std::unordered_map<sim::data::Variant, double> results;
+
     for (const auto &row : variants) {
-        if (row.date < date) {
+        if (date <= row.date) {
             // This is the row that's valid for us
             for (const auto &[name, fraction] : row.variants) {
                 Variant variant;
@@ -125,6 +126,7 @@ std::unordered_map<sim::data::Variant, double> sim::data::GetVariantFractions(in
                 if (name == "delta") variant = Variant::Delta;
                 results[variant] = fraction;
             }
+            return results;
         }
     }
 

@@ -56,15 +56,12 @@ sim::StateSimulator::InitializePopulation(const std::unordered_map<int, data::In
     }
 
     while (working_day < max_day) {
-        // The total number of infected people is the size of the infectious_ set, and for the initialization step can
-        // also be assumed to be the value of the infected_pointer. At each step in the history the number of infected
-        // should be the number of people who have TESTED positive.  That means that when we "infect" someone while
-        // initializing the history, we set the date tested to today (the data should be corrected to count a case as
-        // the date that the test was done) and then back-calculate a guess at when the infection actually occurred.
         auto h = history.find(working_day);
         if (h == history.end())
             continue;
 
+        // Todo: Remove the working_day value and replace it with today_ everywhere it's used, and check that nothing
+        // breaks when that happens
         today_ = working_day;
         auto variant_fractions = data::GetVariantFractions(working_day, variant_history);
 
@@ -95,6 +92,7 @@ sim::StateSimulator::InitializePopulation(const std::unordered_map<int, data::In
         // If the options are set to export the full history, we do it here
         if (options_ != nullptr && options_->full_history) {
             records.push_back(GetStepResult());
+//            printf("init: %i %u %u -> %u\n", records.back().year, records.back().month, records.back().day, records.back().total_infections);
         }
 
         working_day++;
@@ -141,7 +139,7 @@ void sim::StateSimulator::SetProbabilities(double p_self) {
     self_contact_dist_ = std::make_unique<std::binomial_distribution<int>>((int)pop_.size(), normalized_contact_prob);
 }
 
-void sim::StateSimulator::SimulateDay() {
+sim::data::StepResult sim::StateSimulator::SimulateDay() {
     std::vector<size_t> no_longer_infectious;
     std::vector<std::tuple<size_t, data::Variant>> to_infect;
 
@@ -206,7 +204,10 @@ void sim::StateSimulator::SimulateDay() {
         InfectPerson(selected, *variants_->at(variant));
     }
 
+    auto result = GetStepResult();
+
     today_++;
+    return result;
 }
 
 void sim::StateSimulator::ApplyVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines) {

@@ -33,7 +33,7 @@ class StateSimulator {
     void SetProbabilities(double p_self);
     inline void SetOptions(data::ProgramOptions *options) { options_ = options; }
 
-    void SimulateDay();
+    data::StepResult SimulateDay();
 
     void ApplyVaccines(const std::unordered_map<int, data::VaccineHistory> &vaccines);
 

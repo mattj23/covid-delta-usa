@@ -22,7 +22,7 @@ from matplotlib.axes._axes import Axes
 
 def main():
     state = "CO"
-    start_date = Date(2021, 6, 20) # Corresponds with a collection bin
+    start_date = Date(2021, 6, 20)  # Corresponds with a collection bin
     end_date = Date(2021, 7, 17)
     plot_start = Date(2021, 5, 15)  # input_data.start_day - TimeDelta(days=5)
     # plot_start = input_data.start_day
@@ -34,7 +34,7 @@ def main():
     # Create some world properties
     properties = default_world_properties()
 
-    fig: Figure = plt.figure(figsize=(12, 6*4))
+    fig: Figure = plt.figure(figsize=(12, 6 * 4))
     fig.subplots_adjust(top=0.95, bottom=0.05)
     ax0, ax1, ax2 = fig.subplots(3)
 
@@ -62,33 +62,9 @@ def main():
     x_, y_ = zip(*sorted((v["date"], v["variants"]["delta"]) for v in variant_history))
     ax2.plot(x_, y_, "deeppink", linewidth=4, label="CDC Variant Tracking", marker="o")
 
-    def _plot_discrete_function(ax: Axes, f: DiscreteFunction, color, width, label):
-        x_, y_ = [np.array(v) for v in zip(*enumerate(f.values))]
-        x_ = x_ - f.offset
-        ax.plot(x_, y_, color=color, linewidth=width, label=label)
-
-    def plot_infectivity(ax: Axes):
-        ax.set_title("Relative Infectivity, Alpha/Pre-Alpha vs Delta")
-        ax.set_xlabel("Days from symptom onset")
-        ax.set_ylabel("Relative infectiousness")
-
-        _plot_discrete_function(ax, properties.alpha.infectivity, "orange", 2, "Alpha/Pre-Alpha")
-        _plot_discrete_function(ax, properties.delta.infectivity, "red", 2, "Delta")
-        ax.legend()
-
-    def plot_vaccine_immunity(ax: Axes):
-        ax.set_title("Vaccine Efficacy, Alpha/Pre-Alpha vs Delta")
-        ax.set_xlabel("Days from first shot (assuming 2nd is at day 21)")
-        ax.set_ylabel("Efficacy (Reduction in risk ratio)")
-
-        _plot_discrete_function(ax, properties.alpha.vax_immunity, "orange", 2, "Alpha/Pre-Alpha")
-        _plot_discrete_function(ax, properties.delta.vax_immunity, "red", 2, "Delta")
-        ax.legend()
-
-
     bundles = [
-        dict(factor=2.3),
-               ]
+        dict(factor=3.4),
+    ]
 
     # properties.delta.vax_immunity = properties.alpha.vax_immunity.scale_y(0.8)
     # plot_vaccine_immunity(ax3)
@@ -102,9 +78,9 @@ def main():
             world_properties=properties,
             start_day=start_date,
             end_day=end_date,
-            contact_prob=1.2,
+            contact_prob=1.0,
             state_info=load_state_info(),
-            population_scale=10,
+            population_scale=50,
             vax_history=load_vaccine_histories(),
             variant_history=load_variant_history(),
             infected_history=load_state_estimates(),
@@ -121,37 +97,44 @@ def main():
         color = "darkorange"
 
         plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
-
-        new_delta = zip(plt_r.dates, plt_r.new_delta_infections.mean)
-        new_all = zip(plt_r.dates, plt_r.new_infections.mean)
-        # bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history if k['date'] > start_date and k['date'] <= end_date}
-        bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history}
-        dates = sorted(bins.keys())
-        for date, cases in new_delta:
-            for d in dates:
-                if date <= d:
-                    bins[d]["delta"] += cases
-        for date, cases in new_all:
-            for d in dates:
-                if date <= d:
-                    bins[d]["total"] += cases
-
-        ratio_x, ratio_y = zip(*sorted((k, v["delta"] / v["total"]) for k, v in bins.items() if v["total"]))
-        ax2.plot(ratio_x, ratio_y, "teal", linewidth=2, label=f"Simulated {delta_scale:0.2f}x Infectivity", marker="x")
-        ratio = plt_r.new_delta_infections / plt_r.new_infections
-        ax2.plot(plt_r.dates, ratio.mean, "mediumpurple", label="New infections delta ratio")
-        ax2.plot([start_date, start_date], [0, 1], "lightcoral", linestyle="--")
-
+        for date, value in zip(plt_r.dates, plt_r.new_infections.mean):
+            if value == 0:
+                print(f"Broken date: {date}")
 
         # Cumulative infections
-        ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=color, alpha=0.5)
+        ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=color,
+                         alpha=0.5)
         ax0.plot(plt_r.dates, plt_r.total_infections.mean, color, linewidth=2, label=label)
 
         # Daily infections
         ax1.plot(plt_r.dates, plt_r.new_infections.mean, color, linewidth=2, label=label)
-        ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=color, alpha=0.5)
-        ax1.plot(plt_r.dates, plt_r.new_delta_infections.mean, "cyan", linewidth=2, label="Daily delta infections")
-        ax1.fill_between(plt_r.dates, plt_r.new_delta_infections.mean, 0, facecolor="cyan", alpha=0.5)
+        ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=color,
+                         alpha=0.5)
+        # ax1.plot(plt_r.dates, plt_r.new_delta_infections.mean, "cyan", linewidth=2, label="Daily delta infections")
+        # ax1.fill_between(plt_r.dates, plt_r.new_delta_infections.mean, 0, facecolor="cyan", alpha=0.5)
+
+        # Variant proportions
+        new_delta = zip(plt_r.dates, plt_r.new_delta_infections.mean)
+        new_all = zip(plt_r.dates, plt_r.new_infections.mean)
+        # bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history if k['date'] > start_date and k['date'] <= end_date}
+        bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history}
+        bin_dates = sorted(bins.keys())
+        for sim_date, cases in new_delta:
+            for bin_date in bin_dates:
+                if sim_date <= bin_date:
+                    bins[bin_date]["delta"] += cases
+                    break
+        for sim_date, cases in new_all:
+            for bin_date in bin_dates:
+                if sim_date <= bin_date:
+                    bins[bin_date]["total"] += cases
+                    break
+
+        ratio_x, ratio_y = zip(*sorted((k, v["delta"] / v["total"]) for k, v in bins.items() if v["total"]))
+        ax2.plot(ratio_x, ratio_y, "teal", linewidth=2, label=f"Simulated {delta_scale:0.2f}x Infectivity", marker="x")
+        # ratio = plt_r.new_delta_infections / plt_r.new_infections
+        # ax2.plot(plt_r.dates, ratio.mean, "mediumpurple", label="New infections delta ratio")
+        ax2.plot([start_date, start_date], [0, 1], "lightcoral", linestyle="--")
 
     ax0.legend()
     ax1.legend()

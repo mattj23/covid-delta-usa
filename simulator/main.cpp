@@ -46,29 +46,31 @@ int main(int argc, char **argv) {
                                                        input.start_day);
 
         if (!init_result.empty()) {
+            // If the option for exporting the full history is on, we copy the data from the initialization phase into
+            // the results storage
             for (const auto& r : init_result) {
                 results.back().results.push_back(r);
             }
+        } else {
+            // If the option for exporting the full history is off, we at least need to export the day before the first
+            // simulation day so that differentiated statistics can be computed
+            results.back().results.push_back(state->GetStepResult());
         }
 
+        // Setting the contact probability
         state->SetProbabilities(input.contact_probability);
 
         auto today = input.start_day;
         while (today < input.end_day) {
-            results.back().results.push_back(state->GetStepResult());
-
             // Add the newly vaccinated
             if (!input.vax_history.empty()) state->ApplyVaccines(input.vax_history[input.state]);
 
             // Simulate the day's events
-            state->SimulateDay();
-
-            // Save the results of the run
+            results.back().results.push_back(state->SimulateDay());
 
             // Increment the clock
             today += date::days{1};
         }
-        results.back().results.push_back(state->GetStepResult());
     }
 
     auto end = std::chrono::system_clock::now();
