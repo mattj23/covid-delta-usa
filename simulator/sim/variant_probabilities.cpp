@@ -32,6 +32,6 @@ bool sim::VariantProbabilities::IsPersonNatImmune(const sim::Person &person, int
 }
 
 bool sim::VariantProbabilities::IsPersonVaxImmune(const sim::Person &person, int today) const {
-    return person.vaccinated.has_value() &&
-           person.vaccine_immunity_scalar <= GetVaxImmunity(today - person.vaccinated.value());
+    return person.is_vaccinated &&
+           person.vaccine_immunity_scalar <= GetVaxImmunity(today - person.vaccination_day);
 }

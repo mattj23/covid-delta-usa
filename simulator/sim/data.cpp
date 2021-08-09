@@ -28,24 +28,6 @@ sim::data::ProgramInput sim::data::LoadData(const std::string& file_name) {
     return j.get<sim::data::ProgramInput>();
 }
 
-void sim::data::to_json(nlohmann::json &j, const sim::data::StepResult &r) {
-    j = nlohmann::json{
-            {"year", r.year},
-            {"month", r.month},
-            {"day", r.day},
-            {"vaccine_saves", r.vaccine_saves},
-            {"natural_saves", r.natural_saves},
-            {"total_infections", r.total_infections},
-            {"total_vaccinated", r.total_vaccinated},
-            {"never_infected", r.never_infected},
-            {"reinfections", r.reinfections},
-            {"virus_carriers", r.virus_carriers},
-            {"vaccinated_infections", r.vaccinated_infections},
-            {"total_delta_infections", r.total_delta_infections},
-            {"total_alpha_infections", r.total_alpha_infections},
-            {"population_infectiousness", r.population_infectiousness},
-    };
-}
 
 void sim::data::to_json(nlohmann::json &j, const sim::data::StateResult &r) {
     j = nlohmann::json{

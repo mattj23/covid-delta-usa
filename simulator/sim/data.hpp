@@ -40,31 +40,13 @@ namespace sim::data {
     void from_json(const nlohmann::json& j, InfectedHistory &d);
     void from_json(const nlohmann::json& j, VaccineHistory &d);
 
-    struct StepResult {
-        int year;
-        uint month;
-        uint day;
-        int total_infections;
-        int total_vaccinated;
-        int never_infected;
-        int total_delta_infections;
-        int total_alpha_infections;
-        int reinfections;
-        int vaccine_saves;
-        int natural_saves;
-        int vaccinated_infections;
-        int virus_carriers;
-
-        double population_infectiousness;
-    };
-
     struct StateResult {
         std::string name{};
-        std::vector<StepResult> results;
+        std::vector<DailySummary> results;
     };
 
+    void to_json(nlohmann::json &j, const DailySummary& r);
     void to_json(nlohmann::json &j, const StateResult& r);
-    void to_json(nlohmann::json &j, const StepResult& r);
 
     struct VariantRecord {
         int date;

@@ -9,9 +9,15 @@ import settings
 import subprocess
 import time
 from datetime import date as Date
+from datetime import timedelta as TimeDelta
 from dataclasses import dataclass
 
 from sim.program_input import ProgramInput, ProgramMode
+
+_reference_date = Date(2019,1,1)
+
+def from_integer_date(d: int) -> Date:
+    return _reference_date + TimeDelta(days=d)
 
 
 @dataclass
@@ -192,9 +198,7 @@ class Simulator:
             for d in row["results"]:
                 d_ = dict(d)
                 del d_["day"]
-                del d_["month"]
-                del d_["year"]
-                d_["date"] = Date(d["year"], d["month"], d["day"])
+                d_["date"] = from_integer_date(d["day"])
                 run_result.append(StepResult(**d_))
 
             run_result.sort(key=lambda x: x.date)

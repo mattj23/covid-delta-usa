@@ -1,4 +1,5 @@
 #pragma once
+#include <nlohmann/json.hpp>
 #include "../date.h"
 
 namespace sim {
@@ -16,4 +17,25 @@ namespace sim {
         Alpha,
         Delta
     };
+
+    struct DailySummary {
+    public:
+        int day;
+
+        int total_infections;
+        int total_vaccinated;
+        int never_infected;
+        int total_delta_infections;
+        int total_alpha_infections;
+        int reinfections;
+        int vaccine_saves;
+        int natural_saves;
+        int vaccinated_infections;
+        int virus_carriers;
+
+        double population_infectiousness;
+    };
+
+    void to_json(nlohmann::json &j, const DailySummary &r);
+
 }

@@ -36,10 +36,8 @@ namespace sim {
          */
         float vaccine_immunity_scalar{};
 
-        /** @summary An optional day on which this individual was vaccinated. If the individual is not vaccinated, this
-         * optional does not have a value.
-         */
-        std::optional<int> vaccinated{};
+        bool is_vaccinated{};
+        int vaccination_day{};
 
         /** @summary Gets whether or not the individual is carrying a variant
          * @return
@@ -55,7 +53,8 @@ namespace sim {
             test_day = 0;
             natural_immunity_scalar = 0;
             vaccine_immunity_scalar = 0;
-            vaccinated = {};
+            is_vaccinated = false;
+            vaccination_day = 0;
         }
     };
 
