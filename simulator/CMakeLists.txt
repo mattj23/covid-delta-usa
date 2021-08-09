@@ -13,8 +13,10 @@ set(TARGET_SOURCE
         sim/probabilities.cpp
         sim/variant_probabilities.hpp
         sim/variant_probabilities.cpp
-        sim/person.hpp
-        sim/person.cpp
+        sim/population/person.hpp
+        sim/population/person.cpp
+        sim/population/population.hpp
+        sim/population/population.cpp
         sim/data.hpp
         sim/data.cpp
         sim/simulators.hpp

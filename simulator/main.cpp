@@ -16,22 +16,22 @@
 using sim::VariantDictionary;
 
 void Simulate(const sim::data::ProgramInput &input, const sim::VariantDictionary &variants);
-void FindContactProb(const sim::data::ProgramInput &input, const sim::VariantDictionary &variants);
+void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const sim::VariantDictionary> variants);
 
 int main(int argc, char **argv) {
-    using sim::data::Variant;
+    using sim::Variant;
 
     std::string data_file = (argc > 1) ? argv[1] : "/tmp/input_data.json";
     printf("Covid Simulation\n");
     printf(" * input file: %s\n", data_file.c_str());
 
     auto input = sim::data::LoadData(data_file);
-    sim::VariantDictionary variants;
-    variants[Variant::Alpha] = std::make_unique<sim::VariantProbabilities>(input.world_properties.alpha, Variant::Alpha);
-    variants[Variant::Delta] = std::make_unique<sim::VariantProbabilities>(input.world_properties.delta, Variant::Delta);
+    auto variants = std::make_shared<sim::VariantDictionary>();
+    (*variants)[Variant::Alpha] = std::make_unique<sim::VariantProbabilities>(input.world_properties.alpha, Variant::Alpha);
+    (*variants)[Variant::Delta] = std::make_unique<sim::VariantProbabilities>(input.world_properties.delta, Variant::Delta);
 
     if (input.options.mode == sim::data::ProgramMode::Simulate) {
-        Simulate(input, variants);
+//        Simulate(input, variants);
     } else if (input.options.mode == sim::data::ProgramMode::FindContactProb) {
         FindContactProb(input, variants);
     }
@@ -42,10 +42,11 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void FindContactProb(const sim::data::ProgramInput &input, const sim::VariantDictionary &variants) {
+void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const sim::VariantDictionary> variants) {
     auto state_info = input.state_info.at(input.state);
-    auto state = std::make_shared<sim::StateSimulator>(state_info.population, input.population_scale, &variants);
-    state->SetOptions(&input.options);
+
+    sim::Simulator simulator(input.options, variants);
+    sim::Population reference_population(state_info.population, input.population_scale);
 
 
     printf(" * starting contact probability simulation\n");
@@ -61,30 +62,39 @@ void FindContactProb(const sim::data::ProgramInput &input, const sim::VariantDic
         expected.push_back(i1 - i0);
     }
 
+    // Initialize the population from the beginning
+    auto init_start = std::chrono::system_clock::now();
+    auto init_result = simulator.InitializePopulation(reference_population, infected_history,
+                                                   input.vax_history.at(input.state),
+                                                   input.variant_history.at(input.state),
+                                                   input.start_day);
+    auto init_end = std::chrono::system_clock::now();
+    auto init_elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(init_end - init_start).count();
+    printf(" * init in %lu ms\n", init_elapsed);
+
+
     auto start = std::chrono::system_clock::now();
     std::vector<double> errors;
     for (int run = 0; run < input.run_count; ++run) {
         std::vector<int> results;
-        // Initialize the population from the beginning
-        auto init_result = state->InitializePopulation(infected_history,
-                                                       input.vax_history.at(input.state),
-                                                       input.variant_history.at(input.state),
-                                                       input.start_day);
+        sim::Population working_population(reference_population);
 
         // Setting the contact probability
-        state->SetProbabilities(input.contact_probability);
-        int last_infections = state->TotalInfections();
+        simulator.SetProbabilities(input.contact_probability);
+        int last_infections = working_population.TotalInfections();
 
         auto today = input.start_day;
         while (today < input.start_day + date::days{kCheckDays}) {
             // Add the newly vaccinated
-            if (!input.vax_history.empty()) state->ApplyVaccines(input.vax_history.at(input.state));
+            if (!input.vax_history.empty()) {
+                simulator.ApplyVaccines(working_population, input.vax_history.at(input.state));
+            }
 
             // Simulate the day's new infections and record them
-            state->SimulateDay();
-            auto new_infections = state->TotalInfections() - last_infections;
+            simulator.SimulateDay(working_population);
+            auto new_infections = working_population.TotalInfections() - last_infections;
             results.push_back(new_infections);
-            last_infections = state->TotalInfections();
+            last_infections = working_population.TotalInfections();
 
             // Increment the clock
             today += date::days{1};
@@ -101,13 +111,13 @@ void FindContactProb(const sim::data::ProgramInput &input, const sim::VariantDic
     auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
     printf(" * contact %.3f simulated in %lu ms\n", input.contact_probability, elapsed);
 
-
     nlohmann::json encoded = errors;
     std::ofstream output{input.output_file.c_str()};
     output << encoded << std::endl;
     output.close();
 }
 
+/*
 void Simulate(const sim::data::ProgramInput &input, const sim::VariantDictionary &variants) {
     auto state_info = input.state_info.at(input.state);
     auto state = std::make_shared<sim::StateSimulator>(state_info.population, input.population_scale, &variants);
@@ -164,3 +174,4 @@ void Simulate(const sim::data::ProgramInput &input, const sim::VariantDictionary
     output << encoded << std::endl;
     output.close();
 }
+*/

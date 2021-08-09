@@ -113,9 +113,9 @@ void sim::data::from_json(const nlohmann::json &j, sim::data::VariantRecord &v) 
     v.date = ToReferenceDate(FromString(j.at("date").get<std::string>()));
 }
 
-std::unordered_map<sim::data::Variant, double> sim::data::GetVariantFractions(int date,
+std::unordered_map<sim::Variant, double> sim::data::GetVariantFractions(int date,
                                                                               const std::vector<VariantRecord> &variants) {
-    std::unordered_map<sim::data::Variant, double> results;
+    std::unordered_map<sim::Variant, double> results;
 
     for (const auto &row : variants) {
         if (date <= row.date) {

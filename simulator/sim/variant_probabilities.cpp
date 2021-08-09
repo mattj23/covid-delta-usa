@@ -1,6 +1,6 @@
 #include "variant_probabilities.hpp"
 
-sim::VariantProbabilities::VariantProbabilities(const data::VariantProperties& variant_properties, data::Variant variant)
+sim::VariantProbabilities::VariantProbabilities(const data::VariantProperties& variant_properties, Variant variant)
         : variant_(variant),
         incubation_(variant_properties.incubation.begin(), variant_properties.incubation.end()),
         properties_(variant_properties) {}

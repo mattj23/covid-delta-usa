@@ -81,11 +81,11 @@ def main():
             end_day=end_date,
             contact_prob=1.0,
             state_info=load_state_info(),
-            population_scale=50,
+            population_scale=10,
             vax_history=load_vaccine_histories(),
             variant_history=load_variant_history(),
             infected_history=load_state_estimates(),
-            run_count=20
+            run_count=500
         )
         # input_data.options.full_history = True
 
@@ -93,6 +93,14 @@ def main():
         input_data.options.mode = ProgramMode.FindContactProb
         simulator = Simulator(input_data, settings.default_input_file)
         result = simulator.run()
+
+        fig2: Figure = plt.figure()
+        ax: Axes = fig2.subplots()
+        ax.set_title(f"Contact Prob Sim ({input_data.contact_prob:0.2f}) scale=1:{input_data.population_scale} runs={input_data.run_count} ({result.run_time:0.1f} s)")
+        ax.hist(result.results, 15)
+        fig2.show()
+        return
+
 
         print(f"took {result.run_time:0.2f}s to run")
 
