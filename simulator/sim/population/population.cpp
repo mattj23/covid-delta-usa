@@ -18,7 +18,7 @@ void sim::Population::Reset() {
     never_infected = static_cast<int>(people.size());
     total_delta_infections = 0;
     total_alpha_infections = 0;
-    reinfections =0;
+    reinfections = 0;
     vaccinated_infections = 0;
 
     infectious_indices.clear();
@@ -60,5 +60,4 @@ void sim::Population::CopyFrom(const Population &other) {
     for (auto i : unvaxxed_indices) {
         unvaxxed_indices.push_back(i);
     }
-
 }
