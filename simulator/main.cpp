@@ -43,6 +43,7 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
     auto state_info = input.state_info.at(input.state);
     sim::Simulator simulator(input.options, variants);
     sim::Population reference_population(state_info.population, input.population_scale);
+    sim::Population working_population(state_info.population, input.population_scale);
 
     printf(" * starting contact probability simulation\n");
 
@@ -72,7 +73,7 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
     std::vector<double> errors;
     for (int run = 0; run < input.run_count; ++run) {
         std::vector<int> results;
-        sim::Population working_population(reference_population);
+        working_population.CopyFrom(reference_population);
 
         // Setting the contact probability
         simulator.SetProbabilities(input.contact_probability);
@@ -116,6 +117,8 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
     auto state_info = input.state_info.at(input.state);
     sim::Simulator simulator(input.options, variants);
     sim::Population reference_population(state_info.population, input.population_scale);
+    sim::Population population(state_info.population, input.population_scale);
+
 
     // Initialize the population from the beginning
     auto init_result = simulator.InitializePopulation(reference_population,
@@ -129,7 +132,7 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
     auto start = std::chrono::system_clock::now();
     std::vector<sim::data::StateResult> results;
     for (int run = 0; run < input.run_count; ++run) {
-        auto population = std::make_unique<sim::Population>(reference_population);
+        population.CopyFrom(reference_population);
         results.emplace_back();
         results.back().name = input.state;
 
@@ -142,7 +145,7 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
         } else {
             // If the option for exporting the full history is off, we at least need to export the day before the first
             // simulation day so that differentiated statistics can be computed
-            results.back().results.push_back(simulator.GetDailySummary(*population, input.options.expensive_stats));
+            results.back().results.push_back(simulator.GetDailySummary(population, input.options.expensive_stats));
         }
 
         // Setting the contact probability
@@ -151,11 +154,11 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
         auto today = input.start_day;
         while (today < input.end_day) {
             // Add the newly vaccinated
-            if (!input.vax_history.empty()) simulator.ApplyVaccines(*population,
+            if (!input.vax_history.empty()) simulator.ApplyVaccines(population,
                                                                      input.vax_history.at(input.state));
 
             // Simulate the day's events
-            results.back().results.push_back(simulator.SimulateDay(*population));
+            results.back().results.push_back(simulator.SimulateDay(population));
 
             // Increment the clock
             today += date::days{1};

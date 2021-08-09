@@ -96,11 +96,11 @@ def main():
 
         fig2: Figure = plt.figure()
         ax: Axes = fig2.subplots()
-        ax.set_title(f"Contact Prob Sim ({input_data.contact_prob:0.2f}) scale=1:{input_data.population_scale} runs={input_data.run_count} ({result.run_time:0.1f} s)")
+        ax.set_title(
+            f"Contact Prob Sim ({input_data.contact_prob:0.2f}) scale=1:{input_data.population_scale} runs={input_data.run_count} ({result.run_time:0.1f} s)")
         ax.hist(result.results, 15)
         fig2.show()
         return
-
 
         print(f"took {result.run_time:0.2f}s to run")
 

@@ -56,6 +56,17 @@ namespace sim {
             is_vaccinated = false;
             vaccination_day = 0;
         }
+
+        inline void CopyFrom(const Person& other) {
+            variant = other.variant;
+            infected_day = other.infected_day;
+            symptom_onset = other.symptom_onset;
+            test_day = other.test_day;
+            natural_immunity_scalar = other.natural_immunity_scalar;
+            vaccine_immunity_scalar = other.vaccine_immunity_scalar;
+            is_vaccinated = other.is_vaccinated;
+            vaccination_day = other.vaccination_day;
+        }
     };
 
 }

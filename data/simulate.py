@@ -22,7 +22,7 @@ def main():
         world_properties=default_world_properties(),
         start_day=Date(2021, 7, 14),
         end_day=Date(2021, 11, 14),
-        contact_prob=1.5,
+        contact_prob=1.27,
         state_info=load_state_info(),
         population_scale=100,
         run_count=10

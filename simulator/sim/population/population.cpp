@@ -30,3 +30,35 @@ void sim::Population::Reset() {
     for (size_t i = 0; i < people.size(); ++i)
         unvaxxed_indices.push_back(i);
 }
+
+void sim::Population::CopyFrom(const Population &other) {
+    if (people.size() != other.people.size()) {
+        // Throw exception
+    }
+
+    today = other.today;
+    vaccine_saves = other.vaccine_saves;
+    natural_saves = other.natural_saves;
+    total_infections = other.total_infections;
+    total_vaccinated = other.total_vaccinated;
+    never_infected = other.never_infected;
+    total_delta_infections = other.total_delta_infections;
+    total_alpha_infections = other.total_alpha_infections;
+    reinfections = other.reinfections;
+    vaccinated_infections = other.vaccinated_infections;
+
+    for (size_t i = 0; i < people.size(); ++i) {
+        people[i].CopyFrom(other.people[i]);
+    }
+
+    infectious_indices.clear();
+    for (auto i : other.infectious_indices) {
+        infectious_indices.insert(i);
+    }
+
+    unvaxxed_indices.clear();
+    for (auto i : unvaxxed_indices) {
+        unvaxxed_indices.push_back(i);
+    }
+
+}

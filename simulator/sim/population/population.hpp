@@ -21,6 +21,7 @@ namespace sim {
         Population(int unscaled_size, int scale);
 
         void Reset();
+        void CopyFrom(const Population& other);
 
         [[nodiscard]] inline int Scale() const { return scale_; }
 
