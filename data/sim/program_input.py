@@ -38,7 +38,7 @@ class ProgramInput:
     contact_prob: float
     world_properties: WorldProperties
     state_info: Dict[str, StateInfo]
-    options: ProgramOptions = ProgramOptions(False, False, ProgramMode.Simulate)
+    options: ProgramOptions
     population_scale: Optional[int] = 10
     run_count: Optional[int] = 1
     test_history: Optional[Dict[str, StateHistory]] = None

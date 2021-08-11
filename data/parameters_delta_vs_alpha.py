@@ -1,6 +1,8 @@
 """
     This script uses the simulator to try to estimate the relative difference in infectivity between the
     alpha/ancestral strains and the delta variant.
+
+    bin dates end on 5/8, 5/22, 6/5, 6/19, 7/3, 7/17, and 7/31
 """
 from typing import List, Dict, Optional
 
@@ -11,20 +13,24 @@ from datetime import timedelta as TimeDelta
 import settings
 from sim.dynamics import VariantProperties, DiscreteFunction, WorldProperties
 from sim import default_world_properties, ProgramInput, Simulator
-from sim.program_input import ProgramMode
+from sim.program_input import ProgramMode, ProgramOptions
 from sim.world_defaults import custom_infectivity_curve
 from history import (load_state_estimates, load_state_histories, load_state_info, load_variant_history,
                      load_vaccine_histories, StateEstimates, DailyEstimate, StateInfo)
 
 import matplotlib.pyplot as plt
+from matplotlib import cm
 from matplotlib.pyplot import Figure
 from matplotlib.axes._axes import Axes
+import scipy.stats as stats
+
+from find_contact_prob import find_contact_prob
 
 
 def main():
-    state = "CO"
+    state = "TN"
     start_date = Date(2021, 6, 20)  # Corresponds with a collection bin
-    end_date = Date(2021, 7, 17)
+    end_date = Date(2021, 8, 1)
     plot_start = Date(2021, 5, 15)  # input_data.start_day - TimeDelta(days=5)
     # plot_start = input_data.start_day
     plot_end = end_date
@@ -63,49 +69,40 @@ def main():
     x_, y_ = zip(*sorted((v["date"], v["variants"]["delta"]) for v in variant_history))
     ax2.plot(x_, y_, "deeppink", linewidth=4, label="CDC Variant Tracking", marker="o")
 
-    bundles = [
-        dict(factor=3.4),
-    ]
+    test_cases = np.arange(2.0, 4.0, 0.25)
+    test_colors = (test_cases - min(test_cases)) / (max(test_cases) - min(test_cases))
+    colors = cm.get_cmap("jet")(test_colors)
 
-    # properties.delta.vax_immunity = properties.alpha.vax_immunity.scale_y(0.8)
-    # plot_vaccine_immunity(ax3)
-
-    for bundle in bundles:
-        delta_scale = bundle['factor']
+    for d_scale, color in zip(test_cases, colors):
+        delta_scale = d_scale
         properties.delta.infectivity = properties.alpha.infectivity.scale_y(delta_scale)
-        input_data = ProgramInput(
-            output_file=settings.default_output_file,
-            state=state,
-            world_properties=properties,
-            start_day=start_date,
-            end_day=end_date,
-            contact_prob=1.0,
-            state_info=load_state_info(),
-            population_scale=10,
-            vax_history=load_vaccine_histories(),
-            variant_history=load_variant_history(),
-            infected_history=load_state_estimates(),
-            run_count=500
-        )
-        # input_data.options.full_history = True
+        state_info = load_state_info()
+        vax_history = load_vaccine_histories()
+        variant_history = load_variant_history()
+        infected_history = load_state_estimates()
 
-        # First, find the contact probability associated with this delta factor
-        input_data.options.mode = ProgramMode.FindContactProb
+        contact_prob = find_contact_prob(state, start_date, properties, state_info=state_info,
+                                         vax_history=vax_history, variant_history=variant_history,
+                                         infected_history=infected_history)
+
+        input_data = ProgramInput(output_file=settings.default_output_file,
+                                  options=ProgramOptions(full_history=True,
+                                                         expensive_stats=False,
+                                                         mode=ProgramMode.Simulate),
+                                  state=state,
+                                  world_properties=properties,
+                                  start_day=start_date,
+                                  end_day=end_date,
+                                  contact_prob=contact_prob,
+                                  state_info=state_info,
+                                  population_scale=25,
+                                  vax_history=vax_history,
+                                  variant_history=variant_history,
+                                  infected_history=infected_history,
+                                  run_count=100)
         simulator = Simulator(input_data, settings.default_input_file)
         result = simulator.run()
-
-        fig2: Figure = plt.figure()
-        ax: Axes = fig2.subplots()
-        ax.set_title(
-            f"Contact Prob Sim ({input_data.contact_prob:0.2f}) scale=1:{input_data.population_scale} runs={input_data.run_count} ({result.run_time:0.1f} s)")
-        ax.hist(result.results, 15)
-        fig2.show()
-        return
-
         print(f"took {result.run_time:0.2f}s to run")
-
-        label = f""
-        color = "darkorange"
 
         plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
         for date, value in zip(plt_r.dates, plt_r.new_infections.mean):
@@ -113,22 +110,21 @@ def main():
                 print(f"Broken date: {date}")
 
         # Cumulative infections
-        ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=color,
-                         alpha=0.5)
-        ax0.plot(plt_r.dates, plt_r.total_infections.mean, color, linewidth=2, label=label)
+        # ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=color,
+        #                  alpha=0.5)
+        ax0.plot(plt_r.dates, plt_r.total_infections.mean, color=color, linewidth=2, label=f"{delta_scale:0.2f}x, {contact_prob:0.2f} contact")
 
         # Daily infections
-        ax1.plot(plt_r.dates, plt_r.new_infections.mean, color, linewidth=2, label=label)
-        ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=color,
-                         alpha=0.5)
+        ax1.plot(plt_r.dates, plt_r.new_infections.mean, color=color, linewidth=2, label=f"{delta_scale:0.2f}x, {contact_prob:0.2f} contact")
+        # ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=color,
+        #                  alpha=0.5)
         # ax1.plot(plt_r.dates, plt_r.new_delta_infections.mean, "cyan", linewidth=2, label="Daily delta infections")
         # ax1.fill_between(plt_r.dates, plt_r.new_delta_infections.mean, 0, facecolor="cyan", alpha=0.5)
 
         # Variant proportions
         new_delta = zip(plt_r.dates, plt_r.new_delta_infections.mean)
         new_all = zip(plt_r.dates, plt_r.new_infections.mean)
-        # bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history if k['date'] > start_date and k['date'] <= end_date}
-        bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history}
+        bins = {k['date']: {"delta": 0, "total": 0} for k in variant_history[state]}
         bin_dates = sorted(bins.keys())
         for sim_date, cases in new_delta:
             for bin_date in bin_dates:
@@ -142,11 +138,11 @@ def main():
                     break
 
         ratio_x, ratio_y = zip(*sorted((k, v["delta"] / v["total"]) for k, v in bins.items() if v["total"]))
-        ax2.plot(ratio_x, ratio_y, "teal", linewidth=2, label=f"Simulated {delta_scale:0.2f}x Infectivity", marker="x")
+        ax2.plot(ratio_x, ratio_y, color=color, linewidth=2, label=f"Simulated {delta_scale:0.2f}x Infectivity")
         # ratio = plt_r.new_delta_infections / plt_r.new_infections
         # ax2.plot(plt_r.dates, ratio.mean, "mediumpurple", label="New infections delta ratio")
-        ax2.plot([start_date, start_date], [0, 1], "lightcoral", linestyle="--")
 
+    ax2.plot([start_date, start_date], [0, 1], "lightcoral", linestyle="--")
     ax0.legend()
     ax1.legend()
     ax2.legend()
