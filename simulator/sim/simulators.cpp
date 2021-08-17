@@ -175,6 +175,13 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
 
     // First, calculate the new infections, which will be applied in a later step
     loop_timer.Start();
+
+#pragma omp parallel
+{
+    Probabilities prob;
+
+
+#pragma omp for
     for (int carrier_index = 0; carrier_index < population.EndOfInfectious(); carrier_index++) {
         const auto &carrier = population.people[carrier_index];
 
@@ -184,13 +191,16 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
 
         // Check if this guy has passed the point of being infectious
         if (infection_p <= 0 && population.today > carrier.symptom_onset) {
-            no_longer_infectious.push_back(carrier_index);
+            #pragma omp critical (remove_infectious)
+            {
+                no_longer_infectious.push_back(carrier_index);
+            }
             continue;
         }
 
         // Randomly determine how many contacts this person had during the past day, we can
         // move onto the next person if we don't have any
-        auto contact_count = self_contact_dist(prob_.GetGenerator());
+        auto contact_count = self_contact_dist(prob.GetGenerator());
         if (!contact_count)
             continue;
 
@@ -198,12 +208,12 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
         // to act as the person who had contact with this carrier.
         for (int i = 0; i < contact_count; ++i) {
             // Randomly pick a member of the population
-            auto contact_index = selector_dist(prob_.GetGenerator());
+            auto contact_index = selector_dist(prob.GetGenerator());
             const auto &contact = population.people[contact_index];
             if (contact_index < population.EndOfInfectious()) continue;
 
             // If the carrier's roll for infection doesn't succeed, continue
-            if (!prob_.UniformChance(infection_p))
+            if (!prob.UniformChance(infection_p))
                 continue;
 
             // At this point the carrier has successfully rolled to infect the contact. Now we will see if the contact
@@ -220,11 +230,15 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
                 continue;
             }
 
-            // At this point we know the contacted person is vulnerable to infection, so we roll the dice based
-            // on how infectious the carrier is today
-            to_infect.emplace_back(contact_index, carrier.variant);
+            #pragma omp critical (add_infected)
+            {
+                to_infect.emplace_back(contact_index, carrier.variant);
+            }
         }
     }
+
+}
+
     loop_timer.Stop();
 
     remove_timer.Start();
