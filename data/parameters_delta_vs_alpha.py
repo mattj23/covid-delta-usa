@@ -24,12 +24,12 @@ from matplotlib.pyplot import Figure
 from matplotlib.axes._axes import Axes
 import scipy.stats as stats
 
-from find_contact_prob import find_contact_prob
+from find_contact_prob import find_days_contact_prob
 
 
 def main():
-    state = "TN"
-    start_date = Date(2021, 6, 20)  # Corresponds with a collection bin
+    state = "IN"
+    start_date = Date(2021, 7, 4)  # Corresponds with a collection bin
     end_date = Date(2021, 8, 1)
     plot_start = Date(2021, 5, 15)  # input_data.start_day - TimeDelta(days=5)
     # plot_start = input_data.start_day
@@ -81,27 +81,24 @@ def main():
         variant_history = load_variant_history()
         infected_history = load_state_estimates()
 
-        contact_prob = find_contact_prob(state, start_date, properties, state_info=state_info,
-                                         vax_history=vax_history, variant_history=variant_history,
-                                         infected_history=infected_history)
+        contact_prob = find_days_contact_prob(state, start_date, properties, state_info=state_info,
+                                              vax_history=vax_history, variant_history=variant_history,
+                                              infected_history=infected_history)
 
         input_data = ProgramInput(output_file=settings.default_output_file,
-                                  options=ProgramOptions(full_history=True,
-                                                         expensive_stats=False,
-                                                         mode=ProgramMode.Simulate),
                                   state=state,
                                   world_properties=properties,
                                   start_day=start_date,
                                   end_day=end_date,
                                   contact_prob=contact_prob,
                                   state_info=state_info,
-                                  population_scale=25,
+                                  population_scale=10,
                                   vax_history=vax_history,
                                   variant_history=variant_history,
                                   infected_history=infected_history,
                                   run_count=100)
         simulator = Simulator(input_data, settings.default_input_file)
-        result = simulator.run()
+        result = simulator.run(True, False)
         print(f"took {result.run_time:0.2f}s to run")
 
         plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
@@ -112,10 +109,12 @@ def main():
         # Cumulative infections
         # ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=color,
         #                  alpha=0.5)
-        ax0.plot(plt_r.dates, plt_r.total_infections.mean, color=color, linewidth=2, label=f"{delta_scale:0.2f}x, {contact_prob:0.2f} contact")
+        ax0.plot(plt_r.dates, plt_r.total_infections.mean, color=color, linewidth=2,
+                 label=f"{delta_scale:0.2f}x, {contact_prob:0.2f} contact")
 
         # Daily infections
-        ax1.plot(plt_r.dates, plt_r.new_infections.mean, color=color, linewidth=2, label=f"{delta_scale:0.2f}x, {contact_prob:0.2f} contact")
+        ax1.plot(plt_r.dates, plt_r.new_infections.mean, color=color, linewidth=2,
+                 label=f"{delta_scale:0.2f}x, {contact_prob:0.2f} contact")
         # ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=color,
         #                  alpha=0.5)
         # ax1.plot(plt_r.dates, plt_r.new_delta_infections.mean, "cyan", linewidth=2, label="Daily delta infections")

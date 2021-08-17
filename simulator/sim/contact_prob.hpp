@@ -6,22 +6,34 @@
 #include "variant_probabilities.hpp"
 
 namespace sim {
-    struct ContactResult {
-        double prob;
-        double stdev;
-    };
+constexpr int kCheckDays = 3;
 
-    class ContactProbabilitySearch {
-    public:
-        ContactProbabilitySearch(const data::ProgramInput& input, std::shared_ptr<const sim::VariantDictionary> variants);
+struct ContactResult {
+    double prob;
+    double stdev;
+};
 
+struct ContactSearchResultSet {
+    std::vector<int> days;
+    std::vector<double> probabilities;
+    std::vector<double> stdevs;
+};
 
-        ContactResult FindContactProbability(int day);
+void to_json(nlohmann::json &j, const ContactSearchResultSet &o);
 
-    private:
-        const data::ProgramInput &input_;
-        std::shared_ptr<const VariantDictionary> variants_;
+class ContactProbabilitySearch {
+  public:
+    ContactProbabilitySearch(const data::ProgramInput &input, std::shared_ptr<const sim::VariantDictionary> variants);
 
-    };
+    ContactResult FindContactProbability(int day);
 
-}
+  private:
+    const data::ProgramInput &input_;
+    std::shared_ptr<const VariantDictionary> variants_;
+
+    ContactResult GetResultFromBounds(const Population &reference_pop, Population &working_pop,
+                                      const std::vector<int> &expected, sim::Simulator &simulator,
+                                      date::sys_days start_date, double upper, double lower);
+};
+
+} // namespace sim

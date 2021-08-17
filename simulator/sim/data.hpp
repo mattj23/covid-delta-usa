@@ -96,6 +96,7 @@ namespace sim::data {
         std::string state;
         std::string output_file;
         double contact_probability;
+        int contact_day_interval;   // When running a contact prob search, go from start_day to end_day every n days
         int population_scale;
         int run_count;
         ProgramOptions options;

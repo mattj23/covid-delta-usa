@@ -42,12 +42,24 @@ int main(int argc, char **argv) {
 
 void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const sim::VariantDictionary> variants) {
     sim::ContactProbabilitySearch search(input, variants);
-    auto result = search.FindContactProbability(sim::data::ToReferenceDate(input.start_day));
+    sim::ContactSearchResultSet results;
+    printf(" * finding contact probabilities\n");
 
-//    nlohmann::json encoded = errors;
-//    std::ofstream output{input.output_file.c_str()};
-//    output << encoded << std::endl;
-//    output.close();
+    auto working_day = input.start_day;
+    while (working_day <= input.end_day) {
+        auto ref_day = sim::data::ToReferenceDate(working_day);
+        auto result = search.FindContactProbability(ref_day);
+        results.days.push_back(ref_day);
+        results.probabilities.push_back(result.prob);
+        results.stdevs.push_back(result.stdev);
+
+        working_day += date::days{std::max(1, input.contact_day_interval)};
+    }
+
+    nlohmann::json encoded = results;
+    std::ofstream output{input.output_file.c_str()};
+    output << encoded << std::endl;
+    output.close();
 }
 
 void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::VariantDictionary> variants) {

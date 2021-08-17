@@ -12,9 +12,10 @@ from datetime import date as Date
 from datetime import timedelta as TimeDelta
 from dataclasses import dataclass
 
-from sim.program_input import ProgramInput, ProgramMode
+from sim.program_input import ProgramInput, ProgramMode, ProgramOptions
 
-_reference_date = Date(2019,1,1)
+_reference_date = Date(2019, 1, 1)
+
 
 def from_integer_date(d: int) -> Date:
     return _reference_date + TimeDelta(days=d)
@@ -104,6 +105,13 @@ class StepResult:
 
 
 @dataclass
+class ContactSearchResult:
+    days: List[Date]
+    probabilities: List[float]
+    stdevs: List[float]
+
+
+@dataclass
 class SimulationResult:
     run_time: float
     results: Union[Dict[str, List[List[StepResult]]], List[float]]
@@ -134,7 +142,8 @@ class SimulationResult:
             new_delta_infections=self._get_high_mean_lo(state, lambda step: step.new_delta_infections, start, end),
             new_alpha_infections=self._get_high_mean_lo(state, lambda step: step.new_alpha_infections, start, end),
             virus_carriers=self._get_high_mean_lo(state, lambda step: step.virus_carriers, start, end),
-            population_infectiousness=self._get_high_mean_lo(state, lambda step: step.population_infectiousness, start, end),
+            population_infectiousness=self._get_high_mean_lo(state, lambda step: step.population_infectiousness, start,
+                                                             end),
             new_reinfections=self._get_high_mean_lo(state, lambda step: step.new_reinfections, start, end)
         )
 
@@ -176,7 +185,8 @@ class Simulator:
         self.input_data = input_data
         self.input_file = settings.default_input_file if input_file is None else input_file
 
-    def run(self) -> SimulationResult:
+    def run(self, full_history: bool = False, expensive_stats: bool = False) -> SimulationResult:
+        self.input_data.options = ProgramOptions(full_history, expensive_stats, ProgramMode.Simulate)
         self.input_data.write(self.input_file)
         start_time = time.time()
         command = [settings.binary_path, self.input_file]
@@ -186,6 +196,21 @@ class Simulator:
 
         result = self._load_results()
         return SimulationResult(end_time - start_time, result)
+
+    def find_contact_prob(self) -> ContactSearchResult:
+        self.input_data.options = ProgramOptions(False, False, ProgramMode.FindContactProb)
+
+        self.input_data.write(self.input_file)
+        start_time = time.time()
+        command = [settings.binary_path, self.input_file]
+        process = subprocess.Popen(command)
+        process.communicate()
+        end_time = time.time()
+
+        result = self._load_results()
+        days = [from_integer_date(d) for d in result['days']]
+        result['days'] = days
+        return ContactSearchResult(**result)
 
     def _load_simulation_results(self, raw_data) -> Dict[str, List[List[StepResult]]]:
         results = {}
@@ -203,7 +228,7 @@ class Simulator:
 
             run_result.sort(key=lambda x: x.date)
             for i in range(len(run_result) - 1):
-                run_result[i+1].set_difference_values(run_result[i])
+                run_result[i + 1].set_difference_values(run_result[i])
 
             # add all but the first value, which is before the start day
             results[state_name].append(run_result[1:])

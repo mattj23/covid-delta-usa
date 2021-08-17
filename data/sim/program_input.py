@@ -38,7 +38,8 @@ class ProgramInput:
     contact_prob: float
     world_properties: WorldProperties
     state_info: Dict[str, StateInfo]
-    options: ProgramOptions
+    contact_day_interval: int = 1
+    options: Optional[ProgramOptions] = None
     population_scale: Optional[int] = 10
     run_count: Optional[int] = 1
     test_history: Optional[Dict[str, StateHistory]] = None
@@ -47,6 +48,8 @@ class ProgramInput:
     variant_history: Optional[Dict[str, List[Dict]]] = None
 
     def write(self, file_name: str):
+        if self.options is None:
+            self.options = ProgramOptions(False, False, ProgramMode.Simulate)
         output = {
             "output_file": self.output_file,
             "state": self.state,
@@ -55,6 +58,7 @@ class ProgramInput:
             "end_day": self.end_day.strftime("%Y-%m-%d"),
             "contact_probability": self.contact_prob,
             "population_scale": self.population_scale,
+            "contact_day_interval": self.contact_day_interval,
             "run_count": self.run_count,
             "options": asdict(self.options),
             "infected_history": _prep_estimates(self.infected_history),
