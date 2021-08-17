@@ -11,6 +11,8 @@ set(TARGET_SOURCE
         date.h
         sim/covid.hpp
         sim/covid.cpp
+        sim/contact_prob.hpp
+        sim/contact_prob.cpp
         sim/probabilities.hpp
         sim/probabilities.cpp
         sim/variant_probabilities.hpp

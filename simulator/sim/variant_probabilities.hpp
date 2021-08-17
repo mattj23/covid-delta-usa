@@ -23,4 +23,6 @@ namespace sim {
         std::vector<double> incubation_;
         data::VariantProperties properties_;
     };
+
+    using VariantDictionary = std::unordered_map<Variant, std::unique_ptr<VariantProbabilities>>;
 }

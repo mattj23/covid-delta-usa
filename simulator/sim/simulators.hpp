@@ -11,7 +11,6 @@
 #include <vector>
 
 namespace sim {
-using VariantDictionary = std::unordered_map<Variant, std::unique_ptr<VariantProbabilities>>;
 
 class Simulator {
   public:
