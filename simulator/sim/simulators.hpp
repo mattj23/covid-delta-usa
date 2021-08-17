@@ -1,5 +1,6 @@
 #pragma once
 #include "data.hpp"
+#include "timer.hpp"
 #include "population/person.hpp"
 #include "population/population.hpp"
 #include "probabilities.hpp"
@@ -31,6 +32,10 @@ class Simulator {
     inline void SetProbabilities(double p_self) { contact_probability_ = p_self; }
 
     DailySummary SimulateDay(sim::Population &population);
+
+    PerfTimer loop_timer;
+    PerfTimer remove_timer;
+    PerfTimer infect_timer;
 
   private:
     double contact_probability_{};

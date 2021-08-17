@@ -174,6 +174,7 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
     std::uniform_int_distribution<int> selector_dist(0, static_cast<int>(population.people.size()));
 
     // First, calculate the new infections, which will be applied in a later step
+    loop_timer.Start();
     for (int carrier_index = 0; carrier_index < population.EndOfInfectious(); carrier_index++) {
         const auto &carrier = population.people[carrier_index];
 
@@ -224,14 +225,18 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
             to_infect.emplace_back(contact_index, carrier.variant);
         }
     }
+    loop_timer.Stop();
 
+    remove_timer.Start();
     // Remove people from the cache who are no long infectious. This has to be done from largest to smallest, in order
     // to prevent the mechanism from moving a person at the end of the list to somewhere else
     std::sort(no_longer_infectious.begin(), no_longer_infectious.end(), std::greater<>());
     for (auto index : no_longer_infectious) {
         population.RemoveFromInfected(index);
     }
+    remove_timer.Stop();
 
+    infect_timer.Start();
     // Add the newly infected. This has to be done from smallest to largest, to prevent the infectious_ptr_ from
     // advancing beyond the people to be infected at the front of the list, sending them off to elsewhere
     std::sort(to_infect.begin(), to_infect.end());
@@ -244,6 +249,7 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
         InfectPerson(population, selected, *variants_->at(variant));
         last_infected = selected;
     }
+    infect_timer.Stop();
 
     auto result = GetDailySummary(population, options_.expensive_stats);
 
