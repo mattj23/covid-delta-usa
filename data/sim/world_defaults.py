@@ -148,7 +148,7 @@ def delta_infectivity_curve() -> DiscreteFunction:
     """
     The delta variant's infectivity curve is currently estimated by scaling the alpha curve by a factor of 3
     """
-    return alpha_infectivity_curve().scale_y(2.5)
+    return alpha_infectivity_curve().scale_y(2.0)
 
 
 def natural_alpha_efficacy() -> DiscreteFunction:

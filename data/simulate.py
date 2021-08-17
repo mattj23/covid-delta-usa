@@ -29,8 +29,8 @@ def main():
                               end_day=Date(2021, 12, 1),
                               state_info=load_state_info(),
                               population_scale=100,
-                              contact_prob=1,
-                              run_count=200)
+                              contact_prob=1.75 * 1.5,
+                              run_count=50)
 
     plot_start = Date(2020, 6, 1)  # input_data.start_day - TimeDelta(days=5)
     # plot_start = input_data.start_day
@@ -41,42 +41,7 @@ def main():
     input_data.infected_history = load_state_estimates()
     input_data.variant_history = load_variant_history()
 
-    fig: Figure = plt.figure(figsize=(16, 10))
-
-    # ax0 = fig.subplots(1)
-    ax0 = fig.subplots(1)
-    ax0: Axes
-    ax0.set_title(f"Contact Ratio for {input_data.state}, Delta 2.5x modifier")
-    ax0.set_xlabel("Date")
-    ax0.set_ylabel(f"Contact ratio")
-    dates = np.array(contact_results.days)
-    probs = np.array(contact_results.probabilities)
-    stdevs = np.array(contact_results.stdevs)
-    ax0.fill_between(dates, probs + 3*stdevs, probs - 3*stdevs, facecolor="lightblue", alpha=0.5)
-    ax0.plot(dates, probs, color="lightblue", linewidth=4, label="Estimated contact ratio")
-
-    plt_i = input_data.infected_history[input_data.state].get_plottable(dates.min(), dates.max())
-    ax1 = ax0.twinx()
-    ax1.plot(plt_i.dates, plt_i.infections, color="deeppink", linewidth=4, label="Daily Infections")
-
-    h0, l0 = ax0.get_legend_handles_labels()
-    h1, l1 = ax1.get_legend_handles_labels()
-    ax0.legend(h0+h1, l0+l1, loc="upper left")
-
-    fig.show()
-    return
-
-
-    # Vaccination counterfactual of 2x actual
-    # state_pop = input_data.state_info[input_data.state].population
-    # for date, record in input_data.vax_history[input_data.state].records.items():
-    #     record.completed_vax = min(state_pop, record.completed_vax * 2)
-
     simulator = Simulator(input_data, settings.default_input_file)
-    result = simulator.find_contact_prob()
-
-
-    return
     result = simulator.run()
 
     print(f"took {result.run_time:0.2f}s to run")
