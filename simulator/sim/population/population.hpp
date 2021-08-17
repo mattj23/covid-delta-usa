@@ -27,7 +27,6 @@ namespace sim {
         [[nodiscard]] inline int Scale() const { return scale_; }
 
         std::vector<Person> people;
-        std::vector<size_t> unvaxxed_indices;
 
         inline size_t EndOfInfectious() const { return infectious_ptr_; }
         inline int CurrentlyInfectious() const { return static_cast<int>(infectious_ptr_) * scale_; }
@@ -55,7 +54,5 @@ namespace sim {
     private:
         int scale_{};
         size_t infectious_ptr_{};
-
-
     };
 }

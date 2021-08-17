@@ -16,16 +16,17 @@ sim::DailySummary sim::Simulator::GetDailySummary(const sim::Population &populat
     step.total_alpha_infections = population.total_alpha_infections * population.Scale();
     step.reinfections = population.reinfections * population.Scale();
     step.vaccinated_infections = population.vaccinated_infections * population.Scale();
-    step.virus_carriers = static_cast<int>(population.infectious_indices.size()) * population.Scale();
+    step.virus_carriers = population.CurrentlyInfectious();
 
     // Expensive summary statistics
     if (expensive) {
         step.population_infectiousness = 0;
-        for (auto index : population.infectious_indices) {
-            const auto &person = population.people[index];
+        for (int i = 0; i < population.EndOfInfectious(); i++) {
+            const auto &person = population.people[i];
             step.population_infectiousness +=
                 variants_->at(person.variant)->GetInfectivity(population.today - person.symptom_onset);
         }
+        step.population_infectiousness *= population.Scale();
     }
 
     return step;
@@ -49,14 +50,7 @@ void sim::Simulator::InfectPerson(sim::Population &population, size_t person_ind
     person.infected_day = population.today;
     person.symptom_onset = population.today + variant.GetRandomIncubation(prob_.GetGenerator());
     person.natural_immunity_scalar = (float)prob_.UniformScalar();
-    population.infectious_indices.insert(person_index);
-
-    // Swap the person with the person at the end of the infectious indices and advance the pointer
-    if (population.infectious_ptr_ != person_index) {
-    }
-
-
-    population.infectious_ptr_++;
+    population.AddToInfected(person_index);
 
     population.total_infections++;
 
@@ -80,27 +74,25 @@ void sim::Simulator::ApplyVaccines(sim::Population &population,
 
     const auto &today_data = vax->second;
     int to_be_vaxxed = today_data.total_completed_vax / population.Scale();
+    auto search_position = population.EndOfInfectious();
 
-    while ((population.people.size() - population.unvaxxed_indices.size()) < to_be_vaxxed) {
-        // Pick someone at random to get a vax_history
-        std::uniform_int_distribution<int> dist(0, static_cast<int>(population.unvaxxed_indices.size()));
-        int index = dist(prob_.GetGenerator());
-        auto person_index = population.unvaxxed_indices[index];
+        // Scan forward
+    while (to_be_vaxxed > 0) {
+        auto& person = population.people[search_position];
+        if (!person.is_vaccinated) {
+            if (!person.IsInfected() || (population.today - person.infected_day > 30)) {
+                person.is_vaccinated = true;
+                person.vaccination_day = population.today;
+                person.vaccine_immunity_scalar = (float)prob_.UniformScalar();
+                population.total_vaccinated++;
+                to_be_vaxxed--;
+            }
+        }
 
-        if (index < population.unvaxxed_indices.size() - 1)
-            std::swap(population.unvaxxed_indices[index], population.unvaxxed_indices.back());
-        population.unvaxxed_indices.pop_back();
-
-        auto &person = population.people[person_index];
-        if (person.is_vaccinated)
-            continue;
-        if (person.IsInfected() && (population.today - person.infected_day) < 30)
-            continue;
-
-        person.is_vaccinated = true;
-        person.vaccination_day = population.today;
-        person.vaccine_immunity_scalar = (float)prob_.UniformScalar();
-        population.total_vaccinated++;
+        search_position++;
+        if (search_position >= population.people.size()) {
+            break;
+        }
     }
 }
 
@@ -157,12 +149,17 @@ std::vector<sim::DailySummary> sim::Simulator::InitializePopulation(
     }
 
     // Remove anyone who's no longer infectious
-    for (int i = 0; i < infected_pointer; ++i) {
+    std::vector<size_t> to_remove;
+    for (int i = (int)infected_pointer - 1; i >= 0; --i) {
         const auto &person = population.people[i];
         int days_from_symptoms = population.today - person.symptom_onset;
         if (days_from_symptoms > 0 && variants_->at(person.variant)->GetInfectivity(days_from_symptoms) <= 0) {
-            population.infectious_indices.erase(i);
+            to_remove.push_back(i);
         }
+    }
+
+    for (auto index : to_remove) {
+        population.RemoveFromInfected(index);
     }
 
     return summaries;
@@ -177,7 +174,7 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
     std::uniform_int_distribution<int> selector_dist(0, static_cast<int>(population.people.size()));
 
     // First, calculate the new infections, which will be applied in a later step
-    for (size_t carrier_index : population.infectious_indices) {
+    for (int carrier_index = 0; carrier_index < population.EndOfInfectious(); carrier_index++) {
         const auto &carrier = population.people[carrier_index];
 
         // How infectious are they today
@@ -202,6 +199,7 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
             // Randomly pick a member of the population
             auto contact_index = selector_dist(prob_.GetGenerator());
             const auto &contact = population.people[contact_index];
+            if (contact_index < population.EndOfInfectious()) continue;
 
             // If the carrier's roll for infection doesn't succeed, continue
             if (!prob_.UniformChance(infection_p))
@@ -227,14 +225,24 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
         }
     }
 
-    // Remove people from the cache who are no long infectious
+    // Remove people from the cache who are no long infectious. This has to be done from largest to smallest, in order
+    // to prevent the mechanism from moving a person at the end of the list to somewhere else
+    std::sort(no_longer_infectious.begin(), no_longer_infectious.end(), std::greater<>());
     for (auto index : no_longer_infectious) {
-        population.infectious_indices.erase(index);
+        population.RemoveFromInfected(index);
     }
 
-    // Add the newly infected
+    // Add the newly infected. This has to be done from smallest to largest, to prevent the infectious_ptr_ from
+    // advancing beyond the people to be infected at the front of the list, sending them off to elsewhere
+    std::sort(to_infect.begin(), to_infect.end());
+    size_t last_infected = population.people.size() + 1;
     for (const auto &[selected, variant] : to_infect) {
+        // This mechanism prevents the same person from being infected multiple times, which won't work because someone
+        // else is in that index after the swap
+        if (selected == last_infected) continue;
+
         InfectPerson(population, selected, *variants_->at(variant));
+        last_infected = selected;
     }
 
     auto result = GetDailySummary(population, options_.expensive_stats);

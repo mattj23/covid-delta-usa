@@ -7,7 +7,6 @@ sim::Population::Population(int unscaled_size, int scale) {
     long scaled_population = static_cast<long>(std::round(static_cast<double>(unscaled_size) / scale));
     for (long i = 0; i < scaled_population; ++i) {
         people.emplace_back();
-//        infectious.emplace_back(i);
     }
 }
 
@@ -24,13 +23,9 @@ void sim::Population::Reset() {
     vaccinated_infections = 0;
 
     infectious_ptr_ = 0;
-    unvaxxed_indices.clear();
 
     for (auto &p : people)
         p.Reset();
-
-    for (size_t i = 0; i < people.size(); ++i)
-        unvaxxed_indices.push_back(i);
 }
 
 void sim::Population::CopyFrom(const Population &other) {
@@ -53,7 +48,6 @@ void sim::Population::CopyFrom(const Population &other) {
     // These are stl container assignments, which should efficiently make deep copies
     // of the container and its contents
     people = other.people;
-    unvaxxed_indices = other.unvaxxed_indices;
 }
 
 void sim::Population::AddToInfected(size_t current_index) {
