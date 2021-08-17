@@ -179,7 +179,8 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
 #pragma omp parallel
 {
     Probabilities prob;
-
+    std::vector<size_t> local_no_longer_infectious;
+    std::vector<std::tuple<size_t, Variant>> local_to_infect;
 
 #pragma omp for
     for (int carrier_index = 0; carrier_index < population.EndOfInfectious(); carrier_index++) {
@@ -191,10 +192,7 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
 
         // Check if this guy has passed the point of being infectious
         if (infection_p <= 0 && population.today > carrier.symptom_onset) {
-            #pragma omp critical (remove_infectious)
-            {
-                no_longer_infectious.push_back(carrier_index);
-            }
+            local_no_longer_infectious.push_back(carrier_index);
             continue;
         }
 
@@ -230,11 +228,14 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
                 continue;
             }
 
-            #pragma omp critical (add_infected)
-            {
-                to_infect.emplace_back(contact_index, carrier.variant);
-            }
+            local_to_infect.emplace_back(contact_index, carrier.variant);
         }
+    }
+
+    #pragma omp critical (sim_day_merge)
+    {
+        no_longer_infectious.insert(no_longer_infectious.end(), local_no_longer_infectious.begin(), local_no_longer_infectious.end());
+        to_infect.insert(to_infect.end(), local_to_infect.begin(), local_to_infect.end());
     }
 
 }
