@@ -27,6 +27,7 @@ namespace sim {
 
         std::vector<Person> people;
         std::unordered_set<size_t> infectious_indices;
+        std::vector<size_t> infectious;
         std::vector<size_t> unvaxxed_indices;
 
         inline int TotalInfections() const { return total_infections * scale_; }
@@ -49,8 +50,11 @@ namespace sim {
         int total_alpha_infections{};
         int reinfections{};
         int vaccinated_infections{};
+
+        size_t infectious_ptr_{};
     private:
         int scale_{};
+
 
     };
 }

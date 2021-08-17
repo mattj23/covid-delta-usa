@@ -45,6 +45,8 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
     sim::ContactSearchResultSet results;
     printf(" * finding contact probabilities\n");
 
+    PerfTimer timer;
+    timer.Start();
     auto working_day = input.start_day;
     int count = 0;
     while (working_day <= input.end_day) {
@@ -71,7 +73,12 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
         working_day += date::days{std::max(1, input.contact_day_interval)};
     }
 
+    timer.Stop();
     printf("[time] simulation = %0.4f s\n", static_cast<double>(search.sim_timer.Elapsed()) / 1.0e6);
+    printf("[time] copy       = %0.4f s\n", static_cast<double>(search.copy_timer.Elapsed()) / 1.0e6);
+    printf("[time] vaccine    = %0.4f s\n", static_cast<double>(search.vax_timer.Elapsed()) / 1.0e6);
+    printf("[time] total      = %0.4f s\n", static_cast<double>(search.total_timer.Elapsed()) / 1.0e6);
+    printf("[time] all total  = %0.4f s\n", static_cast<double>(timer.Elapsed()) / 1.0e6);
 
     nlohmann::json encoded = results;
     std::ofstream output{input.output_file.c_str()};
@@ -95,7 +102,6 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
 
     printf(" * starting simulation\n");
 
-//    auto start = std::chrono::system_clock::now();
     std::vector<sim::data::StateResult> results;
     for (int run = 0; run < input.run_count; ++run) {
         population.CopyFrom(reference_population);

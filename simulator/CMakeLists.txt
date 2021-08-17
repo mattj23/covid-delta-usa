@@ -7,6 +7,9 @@ set(CMAKE_CXX_FLAGS_RELEASE "-O2")
 find_package(nlohmann_json 3.2.0 REQUIRED)
 find_package(OpenMP REQUIRED)
 
+set(INSTALL_GTEST OFF)
+add_subdirectory(googletest)
+
 set(TARGET_SOURCE
         date.h
         sim/timer.hpp
@@ -29,3 +32,6 @@ set(TARGET_SOURCE
 
 add_executable(delta_sim main.cpp ${TARGET_SOURCE})
 target_link_libraries(delta_sim PRIVATE nlohmann_json::nlohmann_json OpenMP::OpenMP_CXX)
+
+add_executable(gtest_run tests/population_tests.cpp ${TARGET_SOURCE})
+target_link_libraries(gtest_run PRIVATE gtest gtest_main nlohmann_json::nlohmann_json OpenMP::OpenMP_CXX)

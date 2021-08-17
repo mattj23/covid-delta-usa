@@ -1,0 +1,3 @@
+[submodule "simulator/googletest"]
+	path = simulator/googletest
+	url = https://github.com/google/googletest

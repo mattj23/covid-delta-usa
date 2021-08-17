@@ -50,6 +50,14 @@ void sim::Simulator::InfectPerson(sim::Population &population, size_t person_ind
     person.symptom_onset = population.today + variant.GetRandomIncubation(prob_.GetGenerator());
     person.natural_immunity_scalar = (float)prob_.UniformScalar();
     population.infectious_indices.insert(person_index);
+
+    // Swap the person with the person at the end of the infectious indices and advance the pointer
+    if (population.infectious_ptr_ != person_index) {
+    }
+
+
+    population.infectious_ptr_++;
+
     population.total_infections++;
 
     if (person.variant == Variant::Delta)
