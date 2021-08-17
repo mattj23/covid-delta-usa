@@ -29,7 +29,7 @@ def main():
                               end_day=Date(2021, 12, 1),
                               state_info=load_state_info(),
                               population_scale=100,
-                              contact_prob=1.75 * 1.5,
+                              contact_prob=1.75 * 1.3,
                               run_count=50)
 
     plot_start = Date(2020, 6, 1)  # input_data.start_day - TimeDelta(days=5)

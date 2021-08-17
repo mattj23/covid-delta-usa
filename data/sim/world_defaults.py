@@ -21,7 +21,7 @@ def default_world_properties() -> WorldProperties:
     delta = VariantProperties(
         incubation=delta_variant_incubation(),
         infectivity=delta_infectivity_curve(),
-        vax_immunity=pfizer_alpha_efficacy(),
+        vax_immunity=pfizer_delta_efficacy(),
         natural_immunity=natural_delta_efficacy()
     )
 
@@ -223,7 +223,7 @@ def pfizer_delta_efficacy() -> DiscreteFunction:
     :return:
     """
 
-    return DiscreteFunction(0, [])
+    return pfizer_alpha_efficacy().scale_y(0.9)
 
 
 def pfizer_alpha_efficacy() -> DiscreteFunction:

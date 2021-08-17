@@ -43,9 +43,18 @@ sim::ContactProbabilitySearch::GetResultFromBounds(const sim::Population &refere
     std::vector<double> xs; // Contact probabilities
     std::vector<double> ys; // Errors
 
+    PerfTimer copy_timer;
+    PerfTimer sim_timer;
+    PerfTimer total_timer;
+    PerfTimer vax_timer;
+    total_timer.Start();
+
     for (int run = 0; run < input_.run_count; ++run) {
         std::vector<int> results;
+
+        copy_timer.Start();
         working_pop.CopyFrom(reference_pop);
+        copy_timer.Stop();
 
         // Setting the contact probability
         double contact_prob = lower + (step * run);
@@ -56,11 +65,15 @@ sim::ContactProbabilitySearch::GetResultFromBounds(const sim::Population &refere
         while (today < start_date + date::days{kCheckDays}) {
             // Add the newly vaccinated
             if (!input_.vax_history.empty()) {
+                vax_timer.Start();
                 simulator.ApplyVaccines(working_pop, input_.vax_history.at(input_.state));
+                vax_timer.Stop();
             }
 
             // Simulate the day's new infections and record them
+            sim_timer.Start();
             simulator.SimulateDay(working_pop);
+            sim_timer.Stop();
             auto new_infections = working_pop.TotalInfections() - last_infections;
             results.push_back(new_infections);
             last_infections = working_pop.TotalInfections();
@@ -110,6 +123,12 @@ sim::ContactProbabilitySearch::GetResultFromBounds(const sim::Population &refere
     }
     variance = variance / n;
     auto stdev = std::sqrt(variance);
+
+    total_timer.Stop();
+    printf("[time] total = %li\n", total_timer.Elapsed());
+    printf("[time] copy = %li\n", copy_timer.Elapsed());
+    printf("[time] vax = %li\n", vax_timer.Elapsed());
+    printf("[time] sim = %li\n", sim_timer.Elapsed());
 
     return {x0, stdev / slope};
 }

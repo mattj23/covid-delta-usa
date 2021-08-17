@@ -9,6 +9,7 @@ find_package(OpenMP REQUIRED)
 
 set(TARGET_SOURCE
         date.h
+        sim/timer.hpp
         sim/covid.hpp
         sim/covid.cpp
         sim/contact_prob.hpp

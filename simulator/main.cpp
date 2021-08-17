@@ -52,11 +52,16 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
                (int)ymd.year(),
                ymd.month().operator unsigned int(),
                ymd.day().operator unsigned int());
+
+//        auto start = std::chrono::system_clock::now();
         auto ref_day = sim::data::ToReferenceDate(working_day);
         auto result = search.FindContactProbability(ref_day);
         results.days.push_back(ref_day);
         results.probabilities.push_back(result.prob);
         results.stdevs.push_back(result.stdev);
+//        auto end = std::chrono::system_clock::now();
+//        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+//        printf("...%lu ms\n", elapsed);
 
         working_day += date::days{std::max(1, input.contact_day_interval)};
     }
@@ -83,7 +88,7 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
 
     printf(" * starting simulation\n");
 
-    auto start = std::chrono::system_clock::now();
+//    auto start = std::chrono::system_clock::now();
     std::vector<sim::data::StateResult> results;
     for (int run = 0; run < input.run_count; ++run) {
         population.CopyFrom(reference_population);
@@ -119,9 +124,10 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
         }
     }
 
-    auto end = std::chrono::system_clock::now();
-    auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-    printf(" * simulation complete in %lu ms\n", elapsed);
+//    auto end = std::chrono::system_clock::now();
+//    long elapsed;
+//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+//    printf(" * simulation complete in %lu ms\n", elapsed);
 
     nlohmann::json encoded = results;
     std::ofstream output{input.output_file.c_str()};

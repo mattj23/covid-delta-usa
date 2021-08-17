@@ -4,6 +4,7 @@
 #include "data.hpp"
 #include "simulators.hpp"
 #include "variant_probabilities.hpp"
+#include "timer.hpp"
 
 namespace sim {
 constexpr int kCheckDays = 3;
