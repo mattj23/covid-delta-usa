@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <unordered_set>
 #include "person.hpp"
 
 namespace sim {
@@ -22,14 +21,16 @@ namespace sim {
 
         void Reset();
         void CopyFrom(const Population& other);
+        void AddToInfected(size_t current_index);
+        void RemoveFromInfected(size_t current_index);
 
         [[nodiscard]] inline int Scale() const { return scale_; }
 
         std::vector<Person> people;
-        std::unordered_set<size_t> infectious_indices;
-        std::vector<size_t> infectious;
         std::vector<size_t> unvaxxed_indices;
 
+        inline size_t EndOfInfectious() const { return infectious_ptr_; }
+        inline int CurrentlyInfectious() const { return static_cast<int>(infectious_ptr_) * scale_; }
         inline int TotalInfections() const { return total_infections * scale_; }
         inline int TotalVaccinated() const { return total_vaccinated * scale_; }
         inline int NeverInfected() const { return never_infected * scale_; }
@@ -51,9 +52,9 @@ namespace sim {
         int reinfections{};
         int vaccinated_infections{};
 
-        size_t infectious_ptr_{};
     private:
         int scale_{};
+        size_t infectious_ptr_{};
 
 
     };

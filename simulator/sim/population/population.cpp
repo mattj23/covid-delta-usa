@@ -7,7 +7,7 @@ sim::Population::Population(int unscaled_size, int scale) {
     long scaled_population = static_cast<long>(std::round(static_cast<double>(unscaled_size) / scale));
     for (long i = 0; i < scaled_population; ++i) {
         people.emplace_back();
-        infectious.emplace_back(i);
+//        infectious.emplace_back(i);
     }
 }
 
@@ -24,8 +24,6 @@ void sim::Population::Reset() {
     vaccinated_infections = 0;
 
     infectious_ptr_ = 0;
-    infectious_indices.clear();
-    infectious.clear();
     unvaxxed_indices.clear();
 
     for (auto &p : people)
@@ -55,7 +53,32 @@ void sim::Population::CopyFrom(const Population &other) {
     // These are stl container assignments, which should efficiently make deep copies
     // of the container and its contents
     people = other.people;
-    infectious = other.infectious;
-    infectious_indices = other.infectious_indices;
     unvaxxed_indices = other.unvaxxed_indices;
+}
+
+void sim::Population::AddToInfected(size_t current_index) {
+    // If they're already infectious, we do nothing
+    if (current_index < infectious_ptr_) return;
+
+    // If they aren't sitting at the pointer position already, we swap them into place
+    if (current_index != infectious_ptr_) {
+        std::swap(people[current_index], people[infectious_ptr_]);
+    }
+
+    // Finally, we advance the pointer
+    infectious_ptr_++;
+}
+
+void sim::Population::RemoveFromInfected(size_t current_index) {
+    // if they're not infectious, we do nothing
+    if (current_index >= infectious_ptr_) return;
+
+    // We decrement the pointer, which will now very briefly point at someone who is infectious but will be swapped
+    // with someone who isn't
+    infectious_ptr_--;
+
+    // If they're not already sitting at the pointer position we swap them with the individual who is
+    if (current_index != infectious_ptr_) {
+        std::swap(people[current_index], people[infectious_ptr_]);
+    }
 }
