@@ -63,7 +63,7 @@ def extract_variant_data():
 
     It should be named "Variant_Proportions_Plus_Nowcasting.twbx"
     """
-    expected_path = os.path.join(settings.cache_folder, "Variant_Proportions_Plus_Nowcasting.twbx")
+    expected_path = os.path.join(settings.cache_folder, "Variant_Proportions_Weekly.twbx")
     if not os.path.exists(expected_path):
         print("No tableau file for the variant proportions, if you're interested in using updated variant data"
               "please follow the instructions in the fetch_data.py script source code.")

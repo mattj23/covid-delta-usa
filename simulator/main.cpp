@@ -47,6 +47,11 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
 
     auto working_day = input.start_day;
     while (working_day <= input.end_day) {
+        date::year_month_day ymd = working_day;
+        printf(" * contact prob for %i-%u-%u\n",
+               (int)ymd.year(),
+               ymd.month().operator unsigned int(),
+               ymd.day().operator unsigned int());
         auto ref_day = sim::data::ToReferenceDate(working_day);
         auto result = search.FindContactProbability(ref_day);
         results.days.push_back(ref_day);

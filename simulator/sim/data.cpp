@@ -53,6 +53,7 @@ void sim::data::from_json(const nlohmann::json &j, sim::data::ProgramInput &i) {
     i.end_day = FromString(end_text);
     j.at("state").get_to(i.state);
     j.at("contact_probability").get_to(i.contact_probability);
+    j.at("contact_day_interval").get_to(i.contact_day_interval);
     j.at("population_scale").get_to(i.population_scale);
     j.at("run_count").get_to(i.run_count);
     j.at("state_info").get_to(i.state_info);

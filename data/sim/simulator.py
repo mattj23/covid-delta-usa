@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from typing import Dict, List, Optional, Callable, Tuple, Union
 
 import numpy
@@ -19,6 +20,13 @@ _reference_date = Date(2019, 1, 1)
 
 def from_integer_date(d: int) -> Date:
     return _reference_date + TimeDelta(days=d)
+
+
+def _stream_process(process):
+    go = process.poll() is None
+    for line in process.stdout:
+        print(line)
+    return go
 
 
 @dataclass
@@ -203,8 +211,10 @@ class Simulator:
         self.input_data.write(self.input_file)
         start_time = time.time()
         command = [settings.binary_path, self.input_file]
-        process = subprocess.Popen(command)
-        process.communicate()
+        with subprocess.Popen(command, stdout=subprocess.PIPE, shell=True) as process:
+            for line in process.stdout:
+                print(line.decode('utf-8').strip("\n"))
+
         end_time = time.time()
 
         result = self._load_results()

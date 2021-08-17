@@ -109,32 +109,25 @@ def custom_infectivity_curve(shape: float, rate: float, shift: float) -> Discret
     position = median
     traveled = 0
 
-    value = scipy.stats.gamma.pdf(position, shape, -shift, 1/rate)
+    value = scipy.stats.gamma.pdf(position, shape, -shift, 1 / rate)
     while value > limit:
         values.append(value)
         traveled += 1
         position -= 1
-        value = scipy.stats.gamma.pdf(position, shape, -shift, 1/rate)
+        value = scipy.stats.gamma.pdf(position, shape, -shift, 1 / rate)
 
     values.reverse()
 
     position = median + 1
-    value = scipy.stats.gamma.pdf(position, shape, -shift, 1/rate)
+    value = scipy.stats.gamma.pdf(position, shape, -shift, 1 / rate)
     while value > limit:
         values.append(value)
         position += 1
-        value = scipy.stats.gamma.pdf(position, shape, -shift, 1/rate)
+        value = scipy.stats.gamma.pdf(position, shape, -shift, 1 / rate)
 
     values[0] = 0
     values[-1] = 0
     return DiscreteFunction(traveled - median - 1, values)
-
-
-
-
-
-
-
 
     # Generate an inverse cdf table
     offset = 10
@@ -155,7 +148,7 @@ def delta_infectivity_curve() -> DiscreteFunction:
     """
     The delta variant's infectivity curve is currently estimated by scaling the alpha curve by a factor of 3
     """
-    return alpha_infectivity_curve().scale_y(3)
+    return alpha_infectivity_curve().scale_y(2.5)
 
 
 def natural_alpha_efficacy() -> DiscreteFunction:
