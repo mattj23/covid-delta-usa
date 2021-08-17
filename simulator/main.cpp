@@ -46,7 +46,10 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
     printf(" * finding contact probabilities\n");
 
     auto working_day = input.start_day;
+    int count = 0;
     while (working_day <= input.end_day) {
+        if (count++ >= 10) break;
+
         date::year_month_day ymd = working_day;
         printf(" * contact prob for %i-%u-%u\n",
                (int)ymd.year(),
@@ -63,8 +66,12 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
 //        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
 //        printf("...%lu ms\n", elapsed);
 
+        printf(" > result (%0.2f)\n", result.prob);
+
         working_day += date::days{std::max(1, input.contact_day_interval)};
     }
+
+    printf("[time] simulation = %0.4f s\n", static_cast<double>(search.sim_timer.Elapsed()) / 1.0e6);
 
     nlohmann::json encoded = results;
     std::ofstream output{input.output_file.c_str()};

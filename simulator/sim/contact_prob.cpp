@@ -43,10 +43,6 @@ sim::ContactProbabilitySearch::GetResultFromBounds(const sim::Population &refere
     std::vector<double> xs; // Contact probabilities
     std::vector<double> ys; // Errors
 
-    PerfTimer copy_timer;
-    PerfTimer sim_timer;
-    PerfTimer total_timer;
-    PerfTimer vax_timer;
     total_timer.Start();
 
     for (int run = 0; run < input_.run_count; ++run) {
@@ -125,10 +121,10 @@ sim::ContactProbabilitySearch::GetResultFromBounds(const sim::Population &refere
     auto stdev = std::sqrt(variance);
 
     total_timer.Stop();
-    printf("[time] total = %li\n", total_timer.Elapsed());
-    printf("[time] copy = %li\n", copy_timer.Elapsed());
-    printf("[time] vax = %li\n", vax_timer.Elapsed());
-    printf("[time] sim = %li\n", sim_timer.Elapsed());
+//    printf("[time] total = %li\n", total_timer.Elapsed());
+//    printf("[time] copy = %li\n", copy_timer.Elapsed());
+//    printf("[time] vax = %li\n", vax_timer.Elapsed());
+//    printf("[time] sim = %li\n", sim_timer.Elapsed());
 
     return {x0, stdev / slope};
 }

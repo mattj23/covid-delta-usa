@@ -28,6 +28,11 @@ class ContactProbabilitySearch {
 
     ContactResult FindContactProbability(int day);
 
+    PerfTimer copy_timer;
+    PerfTimer sim_timer;
+    PerfTimer total_timer;
+    PerfTimer vax_timer;
+
   private:
     const data::ProgramInput &input_;
     std::shared_ptr<const VariantDictionary> variants_;
@@ -35,6 +40,7 @@ class ContactProbabilitySearch {
     ContactResult GetResultFromBounds(const Population &reference_pop, Population &working_pop,
                                       const std::vector<int> &expected, sim::Simulator &simulator,
                                       date::sys_days start_date, double upper, double lower);
+
 };
 
 } // namespace sim

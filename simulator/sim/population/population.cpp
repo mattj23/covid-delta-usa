@@ -1,4 +1,5 @@
 #include "population.hpp"
+#include "../timer.hpp"
 #include <cmath>
 
 sim::Population::Population(int unscaled_size, int scale) {
@@ -47,17 +48,9 @@ void sim::Population::CopyFrom(const Population &other) {
     reinfections = other.reinfections;
     vaccinated_infections = other.vaccinated_infections;
 
-    for (size_t i = 0; i < people.size(); ++i) {
-        people[i].CopyFrom(other.people[i]);
-    }
-
-    infectious_indices.clear();
-    for (auto i : other.infectious_indices) {
-        infectious_indices.insert(i);
-    }
-
-    unvaxxed_indices.clear();
-    for (auto i : unvaxxed_indices) {
-        unvaxxed_indices.push_back(i);
-    }
+    // These are stl container assignments, which should efficiently make deep copies
+    // of the container and its contents
+    people = other.people;
+    infectious_indices = other.infectious_indices;
+    unvaxxed_indices = other.unvaxxed_indices;
 }
