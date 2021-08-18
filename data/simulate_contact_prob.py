@@ -35,7 +35,7 @@ def main():
 
     ax0 = fig.subplots(1)
     ax0: Axes
-    ax0.set_title(f"Contact Ratio for {state}, Delta 2.0x modifier")
+    ax0.set_title(f"Contact Ratio for {state}, Delta 2.0x modifier old binary")
     ax0.set_xlabel("Date")
     ax0.set_ylabel(f"Contact ratio")
     dates = np.array(contact_results.days)

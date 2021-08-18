@@ -77,7 +77,7 @@ void sim::Simulator::ApplyVaccines(sim::Population &population,
     auto search_position = population.EndOfInfectious();
 
         // Scan forward
-    while (to_be_vaxxed > 0) {
+    while (to_be_vaxxed > population.total_vaccinated) {
         auto& person = population.people[search_position];
         if (!person.is_vaccinated) {
             if (!person.IsInfected() || (population.today - person.infected_day > 30)) {
@@ -85,7 +85,6 @@ void sim::Simulator::ApplyVaccines(sim::Population &population,
                 person.vaccination_day = population.today;
                 person.vaccine_immunity_scalar = (float)prob_.UniformScalar();
                 population.total_vaccinated++;
-                to_be_vaxxed--;
             }
         }
 

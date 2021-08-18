@@ -39,6 +39,8 @@ def main():
 
     simulator = Simulator(input_data, settings.default_input_file)
     result = simulator.run()
+    with open(os.path.join(settings.cache_folder, "new_bin.pickle"), "wb") as handle:
+        pickle.dump(result, handle)
 
     print(f"took {result.run_time:0.2f}s to run")
 
