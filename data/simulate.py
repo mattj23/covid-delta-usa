@@ -18,10 +18,6 @@ from sim import ProgramInput, Simulator, default_world_properties, ContactSearch
 
 
 def main():
-    cache_file = os.path.join(settings.cache_folder, "temp.pickle")
-    with open(cache_file, "rb") as handle:
-        contact_results: ContactSearchResult = pickle.load(handle)
-
     input_data = ProgramInput(output_file=settings.default_output_file,
                               state="FL",
                               world_properties=default_world_properties(),

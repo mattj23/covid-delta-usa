@@ -34,9 +34,9 @@ sim::ContactResult sim::ContactProbabilitySearch::FindContactProbability(int day
     double lower = step0.prob - 3 * step0.stdev;
     auto result = GetResultFromBounds(ref_pop, work_pop, expected, simulator, start_date, upper, lower);
 
-    printf("[time] loop   = %0.4f s\n", static_cast<double>(simulator.loop_timer.Elapsed()) / 1.0e6);
-    printf("[time] remove = %0.4f s\n", static_cast<double>(simulator.remove_timer.Elapsed()) / 1.0e6);
-    printf("[time] infect = %0.4f s\n", static_cast<double>(simulator.infect_timer.Elapsed()) / 1.0e6);
+//    printf("[time] loop   = %0.4f s\n", static_cast<double>(simulator.loop_timer.Elapsed()) / 1.0e6);
+//    printf("[time] remove = %0.4f s\n", static_cast<double>(simulator.remove_timer.Elapsed()) / 1.0e6);
+//    printf("[time] infect = %0.4f s\n", static_cast<double>(simulator.infect_timer.Elapsed()) / 1.0e6);
 
     return result;
 }

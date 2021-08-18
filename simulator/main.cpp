@@ -45,12 +45,10 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
     sim::ContactSearchResultSet results;
     printf(" * finding contact probabilities\n");
 
-    PerfTimer timer;
-    timer.Start();
+//    PerfTimer timer;
+//    timer.Start();
     auto working_day = input.start_day;
-    int count = 0;
     while (working_day <= input.end_day) {
-        if (count++ >= 10) break;
 
         date::year_month_day ymd = working_day;
         printf(" * contact prob for %i-%u-%u\n",
@@ -58,27 +56,23 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
                ymd.month().operator unsigned int(),
                ymd.day().operator unsigned int());
 
-//        auto start = std::chrono::system_clock::now();
         auto ref_day = sim::data::ToReferenceDate(working_day);
         auto result = search.FindContactProbability(ref_day);
         results.days.push_back(ref_day);
         results.probabilities.push_back(result.prob);
         results.stdevs.push_back(result.stdev);
-//        auto end = std::chrono::system_clock::now();
-//        auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-//        printf("...%lu ms\n", elapsed);
 
         printf(" > result (%0.2f)\n", result.prob);
 
         working_day += date::days{std::max(1, input.contact_day_interval)};
     }
 
-    timer.Stop();
-    printf("[time] simulation = %0.4f s\n", static_cast<double>(search.sim_timer.Elapsed()) / 1.0e6);
-    printf("[time] copy       = %0.4f s\n", static_cast<double>(search.copy_timer.Elapsed()) / 1.0e6);
-    printf("[time] vaccine    = %0.4f s\n", static_cast<double>(search.vax_timer.Elapsed()) / 1.0e6);
-    printf("[time] total      = %0.4f s\n", static_cast<double>(search.total_timer.Elapsed()) / 1.0e6);
-    printf("[time] all total  = %0.4f s\n", static_cast<double>(timer.Elapsed()) / 1.0e6);
+//    timer.Stop();
+//    printf("[time] simulation = %0.4f s\n", static_cast<double>(search.sim_timer.Elapsed()) / 1.0e6);
+//    printf("[time] copy       = %0.4f s\n", static_cast<double>(search.copy_timer.Elapsed()) / 1.0e6);
+//    printf("[time] vaccine    = %0.4f s\n", static_cast<double>(search.vax_timer.Elapsed()) / 1.0e6);
+//    printf("[time] total      = %0.4f s\n", static_cast<double>(search.total_timer.Elapsed()) / 1.0e6);
+//    printf("[time] all total  = %0.4f s\n", static_cast<double>(timer.Elapsed()) / 1.0e6);
 
     nlohmann::json encoded = results;
     std::ofstream output{input.output_file.c_str()};
