@@ -96,6 +96,9 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
 
     printf(" * starting simulation\n");
 
+    PerfTimer timer;
+    timer.Start();
+
     std::vector<sim::data::StateResult> results;
     for (int run = 0; run < input.run_count; ++run) {
         population.CopyFrom(reference_population);
@@ -130,11 +133,12 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
             today += date::days{1};
         }
     }
+    timer.Stop();
 
-//    auto end = std::chrono::system_clock::now();
-//    long elapsed;
-//    elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
-//    printf(" * simulation complete in %lu ms\n", elapsed);
+    printf("[time] loop   = %0.4f s\n", static_cast<double>(simulator.loop_timer.Elapsed()) / 1.0e6);
+    printf("[time] remove = %0.4f s\n", static_cast<double>(simulator.remove_timer.Elapsed()) / 1.0e6);
+    printf("[time] infect = %0.4f s\n", static_cast<double>(simulator.infect_timer.Elapsed()) / 1.0e6);
+    printf("[time] all total  = %0.4f s\n", static_cast<double>(timer.Elapsed()) / 1.0e6);
 
     nlohmann::json encoded = results;
     std::ofstream output{input.output_file.c_str()};
