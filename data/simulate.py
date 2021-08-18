@@ -8,6 +8,7 @@ from datetime import timedelta as TimeDelta
 
 import matplotlib.pyplot as plt
 import numpy as np
+from matplotlib import cm
 from matplotlib.pyplot import Figure
 from matplotlib.axes._axes import Axes
 
@@ -19,16 +20,16 @@ from sim import ProgramInput, Simulator, default_world_properties, ContactSearch
 
 def main():
     input_data = ProgramInput(output_file=settings.default_output_file,
-                              state="FL",
+                              state="PA",
                               world_properties=default_world_properties(),
                               start_day=Date(2021, 8, 7),
-                              end_day=Date(2021, 12, 1),
+                              end_day=Date(2022, 1, 1),
                               state_info=load_state_info(),
-                              population_scale=100,
-                              contact_prob=1.75 * 1.3,
+                              population_scale=50,
+                              contact_prob=1.75,
                               run_count=50)
 
-    plot_start = Date(2020, 6, 1)  # input_data.start_day - TimeDelta(days=5)
+    plot_start = Date(2021, 7, 1)  # input_data.start_day - TimeDelta(days=5)
     # plot_start = input_data.start_day
     plot_end = input_data.end_day
 
@@ -37,12 +38,6 @@ def main():
     input_data.infected_history = load_state_estimates()
     input_data.variant_history = load_variant_history()
 
-    simulator = Simulator(input_data, settings.default_input_file)
-    result = simulator.run()
-    with open(os.path.join(settings.cache_folder, "new_bin.pickle"), "wb") as handle:
-        pickle.dump(result, handle)
-
-    print(f"took {result.run_time:0.2f}s to run")
 
     fig: Figure = plt.figure(figsize=(12, 12))
 
@@ -51,25 +46,37 @@ def main():
     ax0: Axes
     ax1: Axes
     ax0.set_title(
-        f"Simulated {input_data.state} against Covidestim.org Infection Estimates ({input_data.contact_prob:0.2f} contact probability)")
+        f"Simulated {input_data.state} against Covidestim.org Infection Estimates")
     ax0.set_xlabel("Date")
     ax0.set_ylabel(f"Infected People (Pop={input_data.state_info[input_data.state].population / 1e6:0.1f}M)")
 
-    plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
     plt_i = input_data.infected_history[input_data.state].get_plottable(plot_start, plot_end)
 
-    ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor="orange",
-                     alpha=0.5)
     ax0.plot(plt_i.dates, plt_i.total_infections, "deeppink", linewidth=3, label="Covidestim.org Infections")
-    ax0.plot(plt_r.dates, plt_r.total_infections.mean, "darkorange", linewidth=2,
-             label="Simulated Total Infections w/ Delta")
-
-    ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor="gold", alpha=0.5)
     ax1.plot(plt_i.dates, plt_i.infections, "coral", linewidth=3, label="Covidestim.org Daily Infections")
-    ax1.plot(plt_r.dates, plt_r.new_infections.mean, "goldenrod", linewidth=2, label="Simulated Daily Infections")
     ax1.set_title("Daily Infections")
     ax1.set_ylabel("People")
-    ax1.legend()
+
+    probabilities = [1., 1.5, 1.75, 2.0 ]
+    cmap = cm.get_cmap("cool")
+
+    for prob in probabilities:
+        scaled = (prob - min(probabilities)) / (max(probabilities) - min(probabilities))
+        color = cmap(scaled)
+        input_data.contact_prob = prob
+        simulator = Simulator(input_data, settings.default_input_file)
+        result = simulator.run()
+        print(f"took {result.run_time:0.2f}s to run")
+        plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
+
+        ax0.fill_between(plt_r.dates, plt_r.total_infections.upper, plt_r.total_infections.lower, facecolor=color,
+                         alpha=0.5)
+
+        ax0.plot(plt_r.dates, plt_r.total_infections.mean, color=color, linewidth=2,
+                 label=f"Simulated Total Infections ({prob:0.2f})")
+
+        ax1.fill_between(plt_r.dates, plt_r.new_infections.lower, plt_r.new_infections.upper, facecolor=color, alpha=0.5)
+        ax1.plot(plt_r.dates, plt_r.new_infections.mean, color=color, linewidth=2, label=f"Simulated Daily Infections ({prob:0.2f})")
 
     # input_data.variant_history = None
     # simulator = Simulator(input_data, _input_path)
@@ -84,6 +91,7 @@ def main():
     # ax1.plot(plt_i.dates, plt_i.total_cases, "darkred", linewidth=3)
     # ax1.plot(plt_h.dates, plt_h.positive_tests, "red", marker="+", linewidth=0)
 
+    ax1.legend()
     ax0.legend()
     fig.show()
 

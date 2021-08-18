@@ -94,7 +94,7 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
                                                       input.variant_history.at(input.state),
                                                       input.start_day);
 
-    printf(" * starting simulation\n");
+    printf(" * starting simulation (pop=%i at 1:%i scale)\n", reference_population.people.size(), input.population_scale);
 
     PerfTimer timer;
     timer.Start();
@@ -133,12 +133,16 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
             today += date::days{1};
         }
     }
-    timer.Stop();
 
+    timer.Stop();
+    printf(" * %i runs in %0.4f s\n", input.run_count, static_cast<double>(timer.Elapsed()) / 1.0e6);
+
+#ifdef PERF_MEASURE
     printf("[time] loop   = %0.4f s\n", static_cast<double>(simulator.loop_timer.Elapsed()) / 1.0e6);
+    printf("[time] alloc  = %0.4f s\n", static_cast<double>(simulator.alloc) / 1.0e6);
     printf("[time] remove = %0.4f s\n", static_cast<double>(simulator.remove_timer.Elapsed()) / 1.0e6);
     printf("[time] infect = %0.4f s\n", static_cast<double>(simulator.infect_timer.Elapsed()) / 1.0e6);
-    printf("[time] all total  = %0.4f s\n", static_cast<double>(timer.Elapsed()) / 1.0e6);
+#endif
 
     nlohmann::json encoded = results;
     std::ofstream output{input.output_file.c_str()};

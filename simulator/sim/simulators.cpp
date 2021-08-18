@@ -173,13 +173,22 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
     std::uniform_int_distribution<int> selector_dist(0, static_cast<int>(population.people.size()));
 
     // First, calculate the new infections, which will be applied in a later step
+#ifdef PERF_MEASURE
     loop_timer.Start();
+#endif
 
 #pragma omp parallel
 {
+#ifdef PERF_MEASURE
+    PerfTimer t_alloc;
+    t_alloc.Start();
+#endif
     Probabilities prob;
     std::vector<size_t> local_no_longer_infectious;
     std::vector<std::tuple<size_t, Variant>> local_to_infect;
+#ifdef PERF_MEASURE
+    t_alloc.Stop();
+#endif
 
 #pragma omp for
     for (int carrier_index = 0; carrier_index < population.EndOfInfectious(); carrier_index++) {
@@ -235,22 +244,30 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
     {
         no_longer_infectious.insert(no_longer_infectious.end(), local_no_longer_infectious.begin(), local_no_longer_infectious.end());
         to_infect.insert(to_infect.end(), local_to_infect.begin(), local_to_infect.end());
+#ifdef PERF_MEASURE
+        alloc += t_alloc.Elapsed();
+#endif
     }
 
 }
 
+#ifdef PERF_MEASURE
     loop_timer.Stop();
-
     remove_timer.Start();
+#endif
+
     // Remove people from the cache who are no long infectious. This has to be done from largest to smallest, in order
     // to prevent the mechanism from moving a person at the end of the list to somewhere else
     std::sort(no_longer_infectious.begin(), no_longer_infectious.end(), std::greater<>());
     for (auto index : no_longer_infectious) {
         population.RemoveFromInfected(index);
     }
-    remove_timer.Stop();
 
+#ifdef PERF_MEASURE
+    remove_timer.Stop();
     infect_timer.Start();
+#endif
+
     // Add the newly infected. This has to be done from smallest to largest, to prevent the infectious_ptr_ from
     // advancing beyond the people to be infected at the front of the list, sending them off to elsewhere
     std::sort(to_infect.begin(), to_infect.end());
@@ -263,7 +280,9 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
         InfectPerson(population, selected, *variants_->at(variant));
         last_infected = selected;
     }
+#ifdef PERF_MEASURE
     infect_timer.Stop();
+#endif
 
     auto result = GetDailySummary(population, options_.expensive_stats);
 

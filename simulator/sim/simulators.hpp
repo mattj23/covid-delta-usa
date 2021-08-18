@@ -11,6 +11,8 @@
 #include <unordered_set>
 #include <vector>
 
+//#define PERF_MEASURE
+
 namespace sim {
 
 class Simulator {
@@ -33,9 +35,12 @@ class Simulator {
 
     DailySummary SimulateDay(sim::Population &population);
 
+#ifdef PERF_MEASURE
     PerfTimer loop_timer;
     PerfTimer remove_timer;
     PerfTimer infect_timer;
+    long alloc{};
+#endif
 
   private:
     double contact_probability_{};

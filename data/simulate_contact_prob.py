@@ -20,7 +20,7 @@ from find_contact_prob import find_contact_prob
 
 def main():
     cache_file = os.path.join(settings.cache_folder, "temp.pickle")
-    state = "FL"
+    state = "VT"
 
     infected_history = load_state_estimates()
     if not os.path.exists(cache_file):
@@ -35,9 +35,9 @@ def main():
 
     ax0 = fig.subplots(1)
     ax0: Axes
-    ax0.set_title(f"Contact Ratio for {state}, Delta 2.0x modifier old binary")
+    ax0.set_title(f"Contact Probability for {state}, Delta 2.0x modifier")
     ax0.set_xlabel("Date")
-    ax0.set_ylabel(f"Contact ratio")
+    ax0.set_ylabel(f"Contact probability")
     dates = np.array(contact_results.days)
     probs = np.array(contact_results.probabilities)
     stdevs = np.array(contact_results.stdevs)
@@ -45,8 +45,9 @@ def main():
     ax0.plot(dates, probs, color="lightblue", linewidth=4, label="Estimated contact ratio")
 
     plt_i = infected_history[state].get_plottable(dates.min(), dates.max())
-    ax1 = ax0.twinx()
+    ax1: Axes = ax0.twinx()
     ax1.plot(plt_i.dates, plt_i.infections, color="deeppink", linewidth=4, label="Daily Infections")
+    ax1.set_ylabel("Estimated daily infections")
 
     h0, l0 = ax0.get_legend_handles_labels()
     h1, l1 = ax1.get_legend_handles_labels()
