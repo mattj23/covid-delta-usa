@@ -13,7 +13,6 @@ sim::Population::Population(int unscaled_size, int scale, const std::vector<doub
             people.back().age = age;
         }
     }
-
 }
 
 void sim::Population::Reset() {
@@ -50,6 +49,7 @@ void sim::Population::CopyFrom(const Population &other) {
     reinfections = other.reinfections;
     vaccinated_infections = other.vaccinated_infections;
     infectious_ptr_ = other.infectious_ptr_;
+    scale_ = other.scale_;
 
     // These are stl container assignments, which should efficiently make deep copies
     // of the container and its contents

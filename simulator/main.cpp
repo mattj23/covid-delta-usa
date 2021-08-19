@@ -84,7 +84,7 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
     auto state_info = input.state_info.at(input.state);
     sim::Simulator simulator(input.options, variants);
     sim::Population reference_population(state_info.population, input.population_scale, state_info.ages);
-    sim::Population population = reference_population;
+    sim::Population population(state_info.population, input.population_scale, state_info.ages);
     printf(" * starting simulation (pop=%i at 1:%i scale)\n", reference_population.people.size(), input.population_scale);
 
     // Initialize the population from the beginning
