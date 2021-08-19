@@ -47,7 +47,7 @@ class ProgramInput:
     vax_history: Optional[Dict[str, StateVaccineHistory]] = None
     variant_history: Optional[Dict[str, List[Dict]]] = None
 
-    def write(self, file_name: str):
+    def to_str(self) -> str:
         if self.options is None:
             self.options = ProgramOptions(False, False, ProgramMode.Simulate)
         output = {
@@ -67,9 +67,7 @@ class ProgramInput:
             "state_info": _prep_state_info(self.state_info),
             "variant_history": _prep_variant_history(self.variant_history)
         }
-
-        with open(file_name, "w") as handle:
-            handle.write(json.dumps(output, indent=2))
+        return json.dumps(output, indent=2)
 
 
 def _prep_variant_history(variant_data: Optional[Dict[str, List[Dict]]]) -> Dict[str, List]:

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
-import sys
-from typing import Dict, List, Optional, Callable, Tuple, Union
+import hashlib
+import os
+import pickle
+from typing import Dict, List, Optional, Callable, Tuple, Union, Any
 
 import numpy
 
@@ -189,13 +191,60 @@ class SimulationResult:
 
 
 class Simulator:
-    def __init__(self, input_data: ProgramInput, input_file=None):
+    def __init__(self, input_data: ProgramInput, input_file=None, no_cache_results=False):
         self.input_data = input_data
         self.input_file = settings.default_input_file if input_file is None else input_file
+        self.no_cache_results = no_cache_results
 
-    def run(self, full_history: bool = False, expensive_stats: bool = False) -> SimulationResult:
+        self._input_text: Optional[str] = None
+        self._cache_path: Optional[str] = None
+
+    def _set_cache_info(self):
+        if self._input_text is not None and self._cache_path is not None:
+            return
+
+        self._input_text = self.input_data.to_str()
+        digest = hashlib.sha1(self._input_text.encode()).hexdigest()
+        self._cache_path = os.path.join(settings.cache_folder, "results", f"{digest}.pickle")
+
+    def _clear_cache_info(self):
+        self._input_text = None
+        self._cache_path = None
+
+    def _check_cache(self) -> Optional[Any]:
+        self._set_cache_info()
+
+        if os.path.exists(self._cache_path):
+            with open(self._cache_path, "rb") as handle:
+                return pickle.load(handle)
+        return None
+
+    def _write_input_text(self):
+        self._set_cache_info()
+        with open(self.input_file, "w") as handle:
+            handle.write(self._input_text)
+
+    def _cache_results(self, result_obj):
+        assert self._cache_path is not None
+        base_dir, _ = os.path.split(self._cache_path)
+        if not os.path.exists(base_dir):
+            os.makedirs(base_dir)
+        with open(self._cache_path, "wb") as handle:
+            pickle.dump(result_obj, handle)
+
+    def run(self, full_history: bool = False, expensive_stats: bool = False, use_cache=False) -> SimulationResult:
         self.input_data.options = ProgramOptions(full_history, expensive_stats, ProgramMode.Simulate)
-        self.input_data.write(self.input_file)
+
+        # Check for cached results
+        if use_cache:
+            final_result = self._check_cache()
+            if final_result is not None:
+                self._clear_cache_info()
+                print("Retrieved results from cache")
+                return SimulationResult(0, final_result)
+
+        self._write_input_text()
+
         start_time = time.time()
         command = [settings.binary_path, self.input_file]
         process = subprocess.Popen(command)
@@ -203,24 +252,41 @@ class Simulator:
         end_time = time.time()
 
         result = self._load_results()
+
+        if not self.no_cache_results:
+            self._cache_results(result)
+
+        self._clear_cache_info()
         return SimulationResult(end_time - start_time, result)
 
-    def find_contact_prob(self) -> ContactSearchResult:
+    def find_contact_prob(self, use_cache=False) -> ContactSearchResult:
         self.input_data.options = ProgramOptions(False, False, ProgramMode.FindContactProb)
 
-        self.input_data.write(self.input_file)
-        start_time = time.time()
+        if use_cache:
+            final_result = self._check_cache()
+            if final_result is not None:
+                final_result: ContactSearchResult
+                self._clear_cache_info()
+                print("Retrieved results from cache")
+                return final_result
+
+        self._write_input_text()
+
         command = [settings.binary_path, self.input_file]
         with subprocess.Popen(command, stdout=subprocess.PIPE, shell=True) as process:
             for line in process.stdout:
                 print(line.decode('utf-8').strip("\n"))
 
-        end_time = time.time()
-
-        result = self._load_results()
+        result: Dict = self._load_results()
         days = [from_integer_date(d) for d in result['days']]
         result['days'] = days
-        return ContactSearchResult(**result)
+
+        search_result = ContactSearchResult(**result)
+
+        if not self.no_cache_results:
+            self._cache_results(search_result)
+
+        return search_result
 
     def _load_simulation_results(self, raw_data) -> Dict[str, List[List[StepResult]]]:
         results = {}

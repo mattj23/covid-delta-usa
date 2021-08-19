@@ -65,7 +65,7 @@ def main():
         color = cmap(scaled)
         input_data.contact_prob = prob
         simulator = Simulator(input_data, settings.default_input_file)
-        result = simulator.run()
+        result = simulator.run(use_cache=True)
         print(f"took {result.run_time:0.2f}s to run")
         plt_r = result.get_plottable(input_data.state, plot_start, plot_end)
 
