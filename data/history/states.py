@@ -18,6 +18,7 @@ class StateInfo:
     name: str
     population: int
     adjacent: List[str]
+    ages: List[int]
 
 
 @dataclass
@@ -59,12 +60,8 @@ class StateHistory:
 def load_state_info() -> Dict[str, StateInfo]:
     if not os.path.exists(_state_info_cache):
         data = _get_state_info()
-        results = {}
-        for k, v in data.items():
-            results[k] = StateInfo(**v)
-
         with open(_state_info_cache, "wb") as handle:
-            pickle.dump(results, handle)
+            pickle.dump(data, handle)
 
     with open(_state_info_cache, "rb") as handle:
         return pickle.load(handle)
@@ -80,19 +77,21 @@ def load_state_histories() -> Dict[str, StateHistory]:
         return pickle.load(handle)
 
 
-def _get_state_info() -> Dict:
+def _get_state_info() -> Dict[str, StateInfo]:
     all_states = {}
+    with open(os.path.join(settings.cache_folder, "state_demographics.pickle"), "rb") as handle:
+        demographics: Dict[str, List[int]] = pickle.load(handle)
+
     for state in state_abbrevs():
         state_file_path = os.path.join(settings.cache_folder, f"covid_act_now-{state}.json")
         with open(state_file_path, "r") as handle:
             data = json.load(handle)
 
         population = data['population']
-        all_states[state] = {
-            "name": state,
-            "population": population,
-            "adjacent": adjacency(state),
-        }
+        all_states[state] = StateInfo(name=state,
+                                      population=population,
+                                      adjacent=adjacency(state),
+                                      ages=demographics[state])
     return all_states
 
 
@@ -121,5 +120,3 @@ def _get_all_histories_no_cache() -> Dict[str, StateHistory]:
             )
 
     return all_data
-
-

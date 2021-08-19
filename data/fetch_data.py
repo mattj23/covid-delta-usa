@@ -17,7 +17,8 @@ from datetime import date as Date
 
 import requests
 import settings
-from states import state_abbrevs
+from states import state_abbrevs, abbrev_to_state
+import pandas
 
 
 def main():
@@ -26,7 +27,45 @@ def main():
 
     fetch_covid_act_now()
     fetch_covid_estim()
+    fetch_state_census()
     extract_variant_data()
+
+
+def fetch_state_census():
+    print("Fetching state demographic info from the US Census")
+    file_name = "sc-est2019-alldata6.csv"
+    url = f"https://www2.census.gov/programs-surveys/popest/tables/2010-2019/state/asrh/{file_name}"
+    output_path = os.path.join(settings.cache_folder, file_name)
+    if not os.path.exists(output_path):
+        with requests.get(url, stream=True) as result:
+            with open(output_path, "wb") as handle:
+                for chunk in result.iter_content(chunk_size=1024 ** 2):
+                    handle.write(chunk)
+
+    # Digest the file and remove duplicated categories
+    data = pandas.read_csv(output_path)
+    data = data[data["AGE"] != 999]
+    data = data[data["SEX"] != 0]
+    data = data[data["ORIGIN"] != 0]
+
+    # Drop unnecessary columns
+    count_col = "POPESTIMATE2019"
+    drop_cols = [c for c in data.columns if c not in ["NAME", "AGE", count_col]]
+    data.drop(columns=drop_cols, axis=1, inplace=True)
+
+    state_demographics = {}
+    for state in state_abbrevs():
+        name = abbrev_to_state()[state]
+        state_data = data[data["NAME"] == name]
+        total_pop = state_data[count_col].sum()
+        age_tallies = state_data.groupby("AGE", as_index=False).sum()
+        assert list(age_tallies["AGE"]) == list(range(86))
+        tallies = [pop / total_pop for age, pop in zip(age_tallies["AGE"], age_tallies[count_col])]
+        state_demographics[state] = tallies
+
+    state_demographics_path = os.path.join(settings.cache_folder, "state_demographics.pickle")
+    with open(state_demographics_path, "wb") as handle:
+        pickle.dump(state_demographics, handle)
 
 
 def fetch_covid_estim():
@@ -132,13 +171,11 @@ def _extract_variants_from_tableau(extract_path: str):
                     variants = {p["variant"]: p["share"] for p in proportions_this_week}
                     delta = sum(v for k, v in variants.items() if k in delta_lineages)
                     weekly_data.append({"date": Date(week.year, week.month, week.day),
-                                        "variants": {"alpha": 1-delta, "delta": delta}})
+                                        "variants": {"alpha": 1 - delta, "delta": delta}})
 
                 regional["USA" if region_key == "USA" else region['state_abv']] = weekly_data
 
             return regional
-
-
 
 
 if __name__ == '__main__':

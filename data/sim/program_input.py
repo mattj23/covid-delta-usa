@@ -92,7 +92,8 @@ def _prep_state_info(data: Dict[str, StateInfo]) -> Dict:
     for state, info in data.items():
         prepared[state] = {
             "population": info.population,
-            "adjacent": info.adjacent
+            "adjacent": info.adjacent,
+            "ages": info.ages
         }
     return prepared
 
