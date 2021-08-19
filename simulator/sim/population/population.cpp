@@ -2,12 +2,18 @@
 #include "../timer.hpp"
 #include <cmath>
 
-sim::Population::Population(int unscaled_size, int scale) {
+sim::Population::Population(int unscaled_size, int scale, const std::vector<double>& ages) {
     scale_ = scale;
     long scaled_population = static_cast<long>(std::round(static_cast<double>(unscaled_size) / scale));
-    for (long i = 0; i < scaled_population; ++i) {
-        people.emplace_back();
+
+    for (int age = 0; age < ages.size(); age++) {
+        auto scaled_count = static_cast<long>(std::round(static_cast<double>(scaled_population) * ages[age]));
+        for (int i = 0; i < scaled_count; i++) {
+            people.emplace_back();
+            people.back().age = age;
+        }
     }
+
 }
 
 void sim::Population::Reset() {

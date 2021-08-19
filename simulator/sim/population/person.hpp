@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cinttypes>
-#include <optional>
 #include "../covid.hpp"
 
 namespace sim {
@@ -39,6 +38,9 @@ namespace sim {
         bool is_vaccinated{};
         int vaccination_day{};
 
+        int age{};
+
+
         /** @summary Gets whether or not the individual is carrying a variant
          * @return
          */
@@ -46,27 +48,8 @@ namespace sim {
 
         /** @summary Resets all of the individual's parameters to the defaults
          */
-        inline void Reset() {
-            variant = Variant::None;
-            infected_day = 0;
-            symptom_onset = 0;
-            test_day = 0;
-            natural_immunity_scalar = 0;
-            vaccine_immunity_scalar = 0;
-            is_vaccinated = false;
-            vaccination_day = 0;
-        }
+        void Reset();
 
-        inline void CopyFrom(const Person& other) {
-            variant = other.variant;
-            infected_day = other.infected_day;
-            symptom_onset = other.symptom_onset;
-            test_day = other.test_day;
-            natural_immunity_scalar = other.natural_immunity_scalar;
-            vaccine_immunity_scalar = other.vaccine_immunity_scalar;
-            is_vaccinated = other.is_vaccinated;
-            vaccination_day = other.vaccination_day;
-        }
     };
 
 }

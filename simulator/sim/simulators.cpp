@@ -103,8 +103,6 @@ std::vector<sim::DailySummary> sim::Simulator::InitializePopulation(
     population.Reset();
     std::vector<DailySummary> summaries;
 
-    size_t infected_pointer = 0;
-
     // Get the min and max days of interest
     population.today = std::numeric_limits<int>::max();
     int max_day = std::numeric_limits<int>::min();
@@ -125,19 +123,43 @@ std::vector<sim::DailySummary> sim::Simulator::InitializePopulation(
         auto variant_fractions = data::GetVariantFractions(population.today, variant_history);
 
         // The number of infections we need
-        long scaled_infections = (long)(h->second.total_infections / population.Scale());
-        long total_to_add = scaled_infections - (long)infected_pointer;
+        int new_infections = h->second.total_infections - population.TotalInfections();
+        double scaled_new_infections = std::round(static_cast<double>(new_infections) / population.Scale());
 
         for (const auto &[variant, fraction] : variant_fractions) {
-            int to_add = (int)std::round(fraction * (double)total_to_add);
+            auto to_add = static_cast<int>(std::round(fraction * scaled_new_infections));
+            const auto& variant_info = variants_->at(variant);
 
-            for (int k = 0; k < to_add; ++k) {
-                InfectPerson(population, infected_pointer, *variants_->at(variant));
-                infected_pointer++;
+            while (to_add > 0) {
+                // Pick someone at random
+                std::uniform_int_distribution<size_t> selector(population.EndOfInfectious(), population.people.size());
+                auto contact_index = selector(prob_.GetGenerator());
+                const auto &contact = population.people[contact_index];
+
+                // Check for natural immunity
+                if (variant_info->IsPersonNatImmune(contact, population.today))
+                    continue;
+
+                // Check for vaccine immunity
+                if (variant_info->IsPersonVaxImmune(contact, population.today))
+                    continue;
+
+                // Failed immunity save, person gets infected
+                InfectPerson(population, contact_index, *variant_info);
+                to_add--;
             }
         }
 
         ApplyVaccines(population, vaccines);
+
+        // Remove anyone who's no longer infectious
+        for (int i = static_cast<int>(population.EndOfInfectious()) - 1; i >= 0; --i) {
+            const auto &person = population.people[i];
+            int days_from_symptoms = population.today - person.symptom_onset;
+            if (days_from_symptoms > 0 && variants_->at(person.variant)->GetInfectivity(days_from_symptoms) <= 0) {
+                population.RemoveFromInfected(i);
+            }
+        }
 
         // If the options are set to export the full history, we do it here
         if (options_.full_history) {
@@ -145,20 +167,6 @@ std::vector<sim::DailySummary> sim::Simulator::InitializePopulation(
         }
 
         population.today++;
-    }
-
-    // Remove anyone who's no longer infectious
-    std::vector<size_t> to_remove;
-    for (int i = (int)infected_pointer - 1; i >= 0; --i) {
-        const auto &person = population.people[i];
-        int days_from_symptoms = population.today - person.symptom_onset;
-        if (days_from_symptoms > 0 && variants_->at(person.variant)->GetInfectivity(days_from_symptoms) <= 0) {
-            to_remove.push_back(i);
-        }
-    }
-
-    for (auto index : to_remove) {
-        population.RemoveFromInfected(index);
     }
 
     return summaries;
@@ -169,28 +177,28 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
     std::vector<std::tuple<size_t, Variant>> to_infect;
 
     auto normalized_contact = contact_probability_ / static_cast<int>(population.people.size());
-    std::binomial_distribution<int> self_contact_dist(static_cast<int>(population.people.size()), normalized_contact);
-    std::uniform_int_distribution<int> selector_dist(0, static_cast<int>(population.people.size()));
 
     // First, calculate the new infections, which will be applied in a later step
-#ifdef PERF_MEASURE
-    loop_timer.Start();
-#endif
+//#ifdef PERF_MEASURE
+//    loop_timer.Start();
+//#endif
 
-#pragma omp parallel
-{
-#ifdef PERF_MEASURE
-    PerfTimer t_alloc;
-    t_alloc.Start();
-#endif
+//#pragma omp parallel default(none) shared(population, no_longer_infectious, to_infect) firstprivate(normalized_contact)
+//{
+//#ifdef PERF_MEASURE
+//    PerfTimer t_alloc;
+//    t_alloc.Start();
+//#endif
     Probabilities prob;
-    std::vector<size_t> local_no_longer_infectious;
+//    std::vector<size_t> local_no_longer_infectious;
     std::vector<std::tuple<size_t, Variant>> local_to_infect;
-#ifdef PERF_MEASURE
-    t_alloc.Stop();
-#endif
+    std::binomial_distribution<int> self_contact_dist(static_cast<int>(population.people.size()), normalized_contact);
+    std::uniform_int_distribution<int> selector_dist(0, static_cast<int>(population.people.size()));
+//#ifdef PERF_MEASURE
+//    t_alloc.Stop();
+//#endif
 
-#pragma omp for
+//#pragma omp for
     for (int carrier_index = 0; carrier_index < population.EndOfInfectious(); carrier_index++) {
         const auto &carrier = population.people[carrier_index];
 
@@ -200,7 +208,7 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
 
         // Check if this guy has passed the point of being infectious
         if (infection_p <= 0 && population.today > carrier.symptom_onset) {
-            local_no_longer_infectious.push_back(carrier_index);
+//            local_no_longer_infectious.push_back(carrier_index);
             continue;
         }
 
@@ -214,7 +222,7 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
         // to act as the person who had contact with this carrier.
         for (int i = 0; i < contact_count; ++i) {
             // Randomly pick a member of the population
-            auto contact_index = selector_dist(prob.GetGenerator());
+            int contact_index = selector_dist(prob.GetGenerator());
             const auto &contact = population.people[contact_index];
             if (contact_index < population.EndOfInfectious()) continue;
 
@@ -240,33 +248,40 @@ sim::DailySummary sim::Simulator::SimulateDay(sim::Population &population) {
         }
     }
 
-    #pragma omp critical (sim_day_merge)
-    {
-        no_longer_infectious.insert(no_longer_infectious.end(), local_no_longer_infectious.begin(), local_no_longer_infectious.end());
+//    #pragma omp critical (sim_day_merge)
+//    {
+//        no_longer_infectious.insert(no_longer_infectious.end(), local_no_longer_infectious.begin(), local_no_longer_infectious.end());
         to_infect.insert(to_infect.end(), local_to_infect.begin(), local_to_infect.end());
-#ifdef PERF_MEASURE
-        alloc += t_alloc.Elapsed();
-#endif
-    }
+//#ifdef PERF_MEASURE
+//        alloc += t_alloc.Elapsed();
+//#endif
+//    }
 
-}
+//}
 
-#ifdef PERF_MEASURE
-    loop_timer.Stop();
-    remove_timer.Start();
-#endif
+//#ifdef PERF_MEASURE
+//    loop_timer.Stop();
+//    remove_timer.Start();
+//#endif
 
     // Remove people from the cache who are no long infectious. This has to be done from largest to smallest, in order
     // to prevent the mechanism from moving a person at the end of the list to somewhere else
-    std::sort(no_longer_infectious.begin(), no_longer_infectious.end(), std::greater<>());
-    for (auto index : no_longer_infectious) {
-        population.RemoveFromInfected(index);
+//    std::sort(no_longer_infectious.begin(), no_longer_infectious.end(), std::greater<>());
+//    for (auto index : no_longer_infectious) {
+//        population.RemoveFromInfected(index);
+//    }
+    for (int i = static_cast<int>(population.EndOfInfectious()) - 1; i >= 0; --i) {
+        const auto &person = population.people[i];
+        int days_from_symptoms = population.today - person.symptom_onset;
+        if (days_from_symptoms > 0 && variants_->at(person.variant)->GetInfectivity(days_from_symptoms) <= 0) {
+            population.RemoveFromInfected(i);
+        }
     }
 
-#ifdef PERF_MEASURE
-    remove_timer.Stop();
-    infect_timer.Start();
-#endif
+//#ifdef PERF_MEASURE
+//    remove_timer.Stop();
+//    infect_timer.Start();
+//#endif
 
     // Add the newly infected. This has to be done from smallest to largest, to prevent the infectious_ptr_ from
     // advancing beyond the people to be infected at the front of the list, sending them off to elsewhere

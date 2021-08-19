@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <vector>
 #include "person.hpp"
 
@@ -17,7 +18,7 @@ namespace sim {
          * @param scale an integer that defines how many people in the real population are represented by each
          * simulated individual, also can be thought of as the model being built to a 1:scale scale
          */
-        Population(int unscaled_size, int scale);
+        Population(int unscaled_size, int scale, const std::vector<double>& ages);
 
         void Reset();
         void CopyFrom(const Population& other);

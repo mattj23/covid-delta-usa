@@ -20,6 +20,7 @@ namespace sim::data {
     struct StateInfo {
         int population;
         std::vector<std::string> adjacent;
+        std::vector<double> ages;
     };
 
     struct KnownCaseHistory {

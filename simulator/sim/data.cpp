@@ -8,6 +8,7 @@ void sim::data::from_json(const nlohmann::json &j, sim::data::KnownCaseHistory &
 void sim::data::from_json(const nlohmann::json &j, sim::data::StateInfo &d) {
     j.at("population").get_to(d.population);
     j.at("adjacent").get_to(d.adjacent);
+    j.at("ages").get_to(d.ages);
 }
 
 void sim::data::from_json(const nlohmann::json &j, sim::data::InfectedHistory &d) {

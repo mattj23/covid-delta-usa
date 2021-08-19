@@ -83,22 +83,23 @@ void FindContactProb(const sim::data::ProgramInput &input, std::shared_ptr<const
 void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::VariantDictionary> variants) {
     auto state_info = input.state_info.at(input.state);
     sim::Simulator simulator(input.options, variants);
-    sim::Population reference_population(state_info.population, input.population_scale);
-    sim::Population population(state_info.population, input.population_scale);
-
+    sim::Population reference_population(state_info.population, input.population_scale, state_info.ages);
+    sim::Population population = reference_population;
+    printf(" * starting simulation (pop=%i at 1:%i scale)\n", reference_population.people.size(), input.population_scale);
 
     // Initialize the population from the beginning
+    PerfTimer timer;
+    timer.Start();
     auto init_result = simulator.InitializePopulation(reference_population,
                                                       input.infected_history.at(input.state),
                                                       input.vax_history.at(input.state),
                                                       input.variant_history.at(input.state),
                                                       input.start_day);
+    timer.Stop();
+    printf(" * initialization took %0.4f s\n", static_cast<double>(timer.Elapsed()) / 1.0e6);
 
-    printf(" * starting simulation (pop=%i at 1:%i scale)\n", reference_population.people.size(), input.population_scale);
-
-    PerfTimer timer;
+    timer.Reset();
     timer.Start();
-
     std::vector<sim::data::StateResult> results;
     for (int run = 0; run < input.run_count; ++run) {
         population.CopyFrom(reference_population);
@@ -144,8 +145,8 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
     printf("[time] infect = %0.4f s\n", static_cast<double>(simulator.infect_timer.Elapsed()) / 1.0e6);
 #endif
 
-    nlohmann::json encoded = results;
-    std::ofstream output{input.output_file.c_str()};
-    output << encoded << std::endl;
-    output.close();
+//    nlohmann::json encoded = results;
+//    std::ofstream output{input.output_file.c_str()};
+//    output << encoded << std::endl;
+//    output.close();
 }

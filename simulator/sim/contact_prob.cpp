@@ -9,8 +9,8 @@ sim::ContactResult sim::ContactProbabilitySearch::FindContactProbability(int day
     auto state_info = input_.state_info.at(input_.state);
 
     Simulator simulator(input_.options, variants_);
-    Population ref_pop(state_info.population, input_.population_scale);
-    Population work_pop(state_info.population, input_.population_scale);
+    Population ref_pop(state_info.population, input_.population_scale, state_info.ages);
+    Population work_pop = ref_pop;
 
     // The starting guess for the contact probability is the value that was supplied
 
