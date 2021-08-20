@@ -4,7 +4,7 @@
 
 This repo contains the beginning of a simplified, mechanics based epidemiological model of SARS-CoV-2 spread in the USA built in order to estimate what the range of plausible outcomes of the delta variant might be.  
 
-This model is probably best described as a monte-carlo agent based simulation.  Though it does not yet take advantage of the typical features for which agent based models are prized (heterogenous populations, geographic features, etc), it simulates individual interactions in order to completely separate the model into a theoretical micro-mechanics portion and an empirical portion, which together in aggregate form the macro behavior.
+This model is probably best described as a monte-carlo agent based simulation.  Though it does not yet take advantage of the typical features for which agent based models are prized (heterogenous populations, geographic features, etc), it simulates individual interactions in order to completely separate the model into a micro-scale portion which behaves according to game-like mechanics, and a macro-scale empirical portion, which together in aggregate form the overall system behavior.
 
 The advantage of doing things this way is that while the computation becomes far more expensive than fitting statistical models, the micro behavior is implemented in an explicit and obvious way, and so can be trivially modified to take into account almost any imaginable behavior.  The empirical portion provides a means to adjust the overall aggregate macro behavior within the constraints of the micro behavior, and encapsulates social and policy factors which affect the system.
 
@@ -27,7 +27,7 @@ Because of the non-deterministic nature of the model, the history is run many ti
 
 ### Model initialization 
 
-Because this is a dynamic model, its ultimate behavior is determined by its initial conditions.  As such, the process of initializing the model population before turning the simulator loose is critical.  In order to start a simulation from a realistic place and thus obtain useful results I've chosen to use historical data (real or fake) to play the model forward from the beginning of the pandemic up until the day where the simulation will take over.  
+Because this is a dynamic model, its behavior is determined by its initial conditions.  As such, the process of initializing the model population before turning the simulator loose is critical.  In order to start a simulation from a realistic place and thus obtain useful results I've chosen to use historical data (real or fake) to play the model forward from the beginning of the pandemic up until the day where the simulation will take over.  
 
 This is where the first modeling choice has to be made: how to handle historical infections.  
 
@@ -44,10 +44,13 @@ The initialization process works as follows:
 2. We advance one day at a time up until the day *before* the simulation is set to start
     1. We look at the difference between the cumulative number of estimated infections on that day and the current infections in the population, adjusted by the population scale ratio (are we simulating every person or 1:n people?)
     2. If we have variant data, we look up the variant proportions for that day. We divide the number of infections which need to be added to the population into their scaled portions, and then we move through the population "infecting" the appropriate number of individuals with each variant
-    3. The infection mechanics will be covered in further detail later, but to be brief they consist of drawing the date of symptom onset from the appropriate random distribution and marking the individual with the appropriate variant. See the section on [infection and disease progression](#infection-and-disease-progression) for further details.
-    4. Additionally, we look the vaccination history provided, and determine the difference between the expected number of completed vaccinations and the number currently in the population.  We select individuals at random from the population (so long as they are more than 30 days from an infection, if they were infected) and mark them as having received the vaccine on the current date.
+    3. The infection mechanics will be covered in further detail later, but to be brief there is both natural and vaccine-induced immunities that must be accounted for even in the population initalization. The immunity odds ratios are respected during this phase, making even the population initialization somewhat non-determinisitic. 
+    4. Once an individual is selected for infection, the date of their symptom onset is drawn from the appropriate random distribution and the individual is marked with the appropriate variant. A natural immunity scalar is selected for future re-exposures.  See the section on [infection and disease progression](#infection-and-disease-progression) for further details.
+    4. Additionally, we look the vaccination history provided, and determine the difference between the expected number of completed vaccinations and the number currently in the population.  We select individuals at random from the population (so long as they are more than 30 days from an infection, if they were infected) and mark them as having received the vaccine on the current date.  They are assigned a random vaccine immunity scalar at this point as well.
 
 At the end of this process the population is fully initialized and ready for the simulation.  All future events will be determined by simulation events and not the historical record.
+
+A copy of the initialized population is maintained so that repeated runs of the simulation do not need to repeat the initialization process.
 
 
 ###  Model forward simulation
@@ -65,7 +68,7 @@ Once initialized, the historical record is abandoned and the simulation takes ov
 
 While most modeling approaches combine the probability of social contact and the complex biological probability of infection into a single R<sub>0</sub> or growth factor which gets fit based on empirical data, the point of this model is to try to isolate the biological, micro-scale infection mechanics from the separate, macro-scale effects of social behavior.  
 
-The reason to go through all of that effort is to be able to implement any arbitrarily complex micro-scale behavior in a simple and obvious way.  To simulate *any* behavior at the micro-scale, all that needs to be done is to implement the code that enacts the behavior forward in time and (if needed) to add any data fields to the simulated individuals necessary to track related state.  The model can then be run forward many times and the aggregate effect observed.  The cost of this profound simplicity is a significant increase in CPU time.
+The reason to go through all of that effort is to be able to implement any arbitrarily complex micro-scale behavior in a simple and obvious way.  To simulate *any* behavior at the micro-scale, all that needs to be done is to implement the code that enacts the behavior forward in time and (if needed) to add any data fields to the simulated individuals necessary to track related state.  The model can then be run forward many times and the aggregate effect observed.  The cost of this profound simplicity is a significant increase in CPU time (*this tradeoff is somewhat mitigated by writing extremely performance-conscious C++ code, but these simulations are still computationally expensive compared to curve fitting or solving PDEs*).
 
 The role of the normalized contact probability, which is a value that determines the rate of potentially transmissible events, is to provide a tunable parameter into the model to account for the more difficult to quantify social and policy factors.  This is the value to be adjusted to match empirical data, but one whose effects will always be constrained by the micro-scale behavior.  
 
@@ -75,6 +78,8 @@ Ideally, then, when reasonable parameters for the normalized contact probability
 ### Infection mechanics
 
 The infection mechanics are the heart of this model, and they fall into two portions.  The first has to do with how an infection occurs and what happens to the individual in the population who becomes infected.  The second has to do with calculating the probability of infection, taking into account the complex effects of heterogenous and changing immunities.
+
+***Note**: the point of this model is to be able to change any micro-scale behavior arbitrarily.  The following section describes the various probability distributions and scalar curves *I* chose to use in the default infection mechanics, but *any* parameter or curve can be trivially swapped for something different.*
  
 #### Infection and disease progression
 

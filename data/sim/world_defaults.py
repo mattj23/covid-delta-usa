@@ -156,6 +156,8 @@ def natural_alpha_efficacy() -> DiscreteFunction:
     SARS-CoV-2 infection rates of antibody-positive compared with antibody-negative health-care workers in
     England: a large, multicentre, prospective cohort study (SIREN).
 
+    Hall et al. 2021
+
     doi:10.1016/S0140-6736(21)00675-9
 
     :return:

@@ -149,10 +149,10 @@ def main():
 
 
 def plot_world_properties(properties: WorldProperties):
-    count = 4
-    fig: Figure = plt.figure(figsize=(12, 8 * count))
-    axes = fig.subplots(count)
-    fig.subplots_adjust(top=0.95, bottom=0.05)
+    # count = 4
+    # fig: Figure = plt.figure(figsize=(12, 8 * count))
+    # axes = fig.subplots(count)
+    # fig.subplots_adjust(top=0.95, bottom=0.05)
 
     # Plotting of the incubation curves
     # =======================================================================================
@@ -171,8 +171,8 @@ def plot_world_properties(properties: WorldProperties):
             # x_l = numpy.linspace(min(x_), max(x_), 100)
             # ax0.plot(x_l, f(x_l), color=color, linewidth=3, linestyle="--")
 
-        _plot_bars(properties.alpha, -width / 2, "orange", "Alpha/Pre-Alpha")
-        _plot_bars(properties.delta, width / 2, "red", "Delta")
+        _plot_bars(properties.alpha, -width / 2, "lightskyblue", "Alpha/Pre-Alpha (Li et al. 2020)")
+        _plot_bars(properties.delta, width / 2, "lightsalmon", "Delta (Scaled by 2/3 as in Li et al. 2021)")
 
         ax.legend()
 
@@ -188,8 +188,8 @@ def plot_world_properties(properties: WorldProperties):
         ax.set_xlabel("Days from symptom onset")
         ax.set_ylabel("Relative infectiousness")
 
-        _plot_discrete_function(ax, properties.alpha.infectivity, "orange", 2, "Alpha/Pre-Alpha")
-        _plot_discrete_function(ax, properties.delta.infectivity, "red", 2, "Delta")
+        _plot_discrete_function(ax, properties.alpha.infectivity, "lightskyblue", 2, "Alpha/Pre-Alpha (Ashcroft et al.)")
+        _plot_discrete_function(ax, properties.delta.infectivity, "lightsalmon", 2, "Delta (Estimated 2x Alpha)")
         ax.legend()
 
     # Plotting of the vaccine immunity curves
@@ -199,9 +199,16 @@ def plot_world_properties(properties: WorldProperties):
         ax.set_xlabel("Days from first shot (assuming 2nd is at day 21)")
         ax.set_ylabel("Efficacy (Reduction in risk ratio)")
 
-        _plot_discrete_function(ax, properties.alpha.vax_immunity, "orange", 2, "Alpha/Pre-Alpha")
-        _plot_discrete_function(ax, properties.delta.vax_immunity, "red", 2, "Delta")
-        ax.legend()
+        from sim.world_defaults import (pfizer_alpha_efficacy, pfizer_delta_efficacy_lopez_uk,
+                                        pfizer_delta_efficacy_israeli_moh)
+        pfizer_alpha_efficacy().plot(ax, "lightskyblue", 3, "Pfizer, vs Alpha (Thomas et al. 2021)")
+        pfizer_delta_efficacy_lopez_uk().plot(ax, "lightsalmon", 3,
+                                              "Pfizer, vs Delta (Thomas et al. scaled to Lopez Bernal et. al)")
+        pfizer_delta_efficacy_israeli_moh().plot(ax, "deeppink", 2,
+                                                 "Pfizer, vs Delta (Israeli MOH trend spliced onto scaled Lopez Bernal)",
+                                                 "dotted")
+
+        ax.legend(loc="lower right")
 
     # Plotting of the natural immunity curves
     # =======================================================================================
@@ -209,20 +216,26 @@ def plot_world_properties(properties: WorldProperties):
         ax.set_title("Efficacy of Natural Immunity, Alpha/Pre-Alpha vs Delta")
         ax.set_xlabel("Days from infection")
         ax.set_ylabel("Efficacy (Reduction in risk ratio)")
-        ax.set_ylim(0, 1.2)
+        ax.set_ylim(0, 1.1)
 
-        _plot_discrete_function(ax, properties.alpha.natural_immunity, "orange", 2, "Alpha/Pre-Alpha")
-        _plot_discrete_function(ax, properties.delta.natural_immunity, "red", 2, "Delta")
-        ax.legend()
+        _plot_discrete_function(ax, properties.alpha.natural_immunity, "lightskyblue", 2, "Alpha/Pre-Alpha (Hall et al. 2021)")
+        _plot_discrete_function(ax, properties.delta.natural_immunity, "lightsalmon", 2, "Delta (PHE Tech. Brief. 19, 23 Jul 2021)")
+        ax.legend(loc="lower left")
+
+    fig: Figure = plt.figure(figsize=(16, 5))
+    axes = fig.subplots(1, 2)
+    fig.subplots_adjust(left=0.05, right=0.95)
 
     # Create Plots
     plot_incubation(axes[0])
     plot_infectivity(axes[1])
-    plot_natural_immunity(axes[2])
-    plot_vaccine_immunity(axes[3])
+    # plot_natural_immunity(axes[0])
+    # plot_vaccine_immunity(axes[1])
 
+    fig.savefig("../images/infection_distributions.png")
     fig.show()
 
 
 if __name__ == '__main__':
-    main()
+    plot_world_properties(default_world_properties())
+    # main()
