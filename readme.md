@@ -136,7 +136,17 @@ The efficacy of the vaccines against the delta variant, however, is much less cl
 
 There are two sources of data currently (July/August 2021) circulating.  The first is Lopez Bernal et al.<sup>[14](#lopezbernal2021)</sup>, a test-negative case-control study done in the UK.  They calculated overall efficacy of the BNT162b2 vaccine (Pfizer/BioNTech) as 93.7% against the alpha variant and 88.0% against the delta variant.
 
-The other source is a recently released document by the Israeli Ministry of Health<sup>[16](#israelimoh2021)</sup> which implies significant waning/decaying immunity against the delta variant. This document has received a fair amount of criticism in light of the Lopez Bernal publication, as it implies a much bleaker 
+The other source is a recently released document by the Israeli Ministry of Health<sup>[16](#israelimoh2021)</sup> which implies significant waning/decaying immunity against the delta variant. This document has received a fair amount of criticism in light of the optimistic UK data, as it implies efficacies waning to as low as 16% in the earliest vaccinated cohort.  The Israeli data is based on much smaller case counts than the UK data.
+
+| ![Israeli MOH](https://github.com/mattj23/covid-delta-usa/blob/main/images/israeli_moh_2021-06-20.png?raw=true)|
+|:--:|
+| *The natural immunity curves in the left figure are current model defaults. The vaccine efficacy curve from Thomas et al. 2021 is the default used to simulate immunity against the alpha variant. Either the Lopez Bernal et al. curve or the version adjusted with the Israeli Ministry of Health immunity decay can be used in the model to simulate vaccine immunity vs delta, and as expected they produce very different results.*|
+
+However, I think the Israeli data is not worth dismissing for the following reasons:
+- The UK study is based on vaccinations and positive PCR tests that were performed up to May 16, 2021, and only included symptomatic positive cases.  
+- The UK's [2nd dose vacciations](https://coronavirus.data.gov.uk/details/vaccinations) were less than 1M before the start of March, reached 5M by the end of March, 15M by the end of April, and 20M by May 16. That is to say that 50% of the UK's Pfizer-vaccinated population as of the end of the study received their second dose in April and another 25% in May.
+- To count as having had 2 doses, a positive case had to have symptoms occuring 14 days or more after the receipt of the second dose, which effectively means that all of the study's 2-dose Pfizer cases had been vaccinated in April or earlier and had to have reported symptoms and tested positive by May 16.
+- The Israeli study 
 
 leaker 
 
