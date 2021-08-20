@@ -21,11 +21,19 @@ class DiscreteFunction:
     def zero(lower=0, upper=1) -> DiscreteFunction:
         return DiscreteFunction(0, [0, 0])
 
+    @staticmethod
+    def from_points(pairs: List[Tuple[float, float]], offset=0, kind: str = "linear") -> DiscreteFunction:
+        xs, ys = zip(*pairs)
+        f = interp1d(xs, ys, kind=kind)
+        x_ = np.arange(0, max(xs) - min(xs))
+        return DiscreteFunction(offset, list(f(x_)))
+
     def _to_arrays(self) -> Tuple[np.array, np.array]:
         x, y = [np.array(p) for p in zip(*enumerate(self.values))]
         return x - self.offset, y
 
-    def plot(self, ax: Axes, color: Optional[str], linewidth: Optional[int], label: Optional[str]):
+    def plot(self, ax: Axes, color: Optional[str] = None, linewidth: Optional[int] = None, label: Optional[str] = None,
+             linestyle: Optional[str] = None):
         x, y = self._to_arrays()
         kwargs = {}
         if linewidth is not None:
@@ -34,6 +42,8 @@ class DiscreteFunction:
             kwargs["color"] = color
         if label is not None:
             kwargs["label"] = label
+        if linestyle is not None:
+            kwargs["linestyle"] = linestyle
         ax.plot(x, y, **kwargs)
 
     def scale_y(self, factor: float) -> DiscreteFunction:
@@ -64,13 +74,13 @@ class DiscreteFunction:
 
     def normalize_area(self) -> DiscreteFunction:
         area = sum(self.values)
-        return self.scale_y(1/area)
+        return self.scale_y(1 / area)
 
     def mean_filter(self, window_size: int) -> DiscreteFunction:
         values = np.array(self.values)
         filtered = []
         for i in range(len(values)):
-            start = i - int(window_size/2)
+            start = i - int(window_size / 2)
             end = start + window_size
             start = max(0, start)
             end = min(len(values), end)
@@ -107,4 +117,3 @@ def prepare_world_properties(w: WorldProperties) -> Dict:
         "alpha": prepare_variant_properties(w.alpha),
         "delta": prepare_variant_properties(w.delta)
     }
-

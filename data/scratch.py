@@ -11,9 +11,32 @@ from matplotlib.axes._axes import Axes
 from history import (load_state_estimates, load_state_histories, load_state_info, load_variant_history,
                      load_vaccine_histories)
 from sim import ProgramInput, Simulator, default_world_properties, ContactSearchResult, SimulationResult
+from sim.dynamics import DiscreteFunction
 
 
-def main():
+def efficacy_curves():
+    fig: Figure = plt.figure(figsize=(16, 10))
+    ax: Axes = fig.subplots()
+    ax.set_title("Vaccine Efficacy Curves")
+    ax.set_xlabel("Days since Dose 1 (Assuming second dose follows)")
+    ax.set_ylabel("Efficacy")
+
+    from sim.world_defaults import (pfizer_alpha_efficacy, pfizer_delta_efficacy_lopez_uk,
+                                    pfizer_delta_efficacy_israeli_moh)
+    pfizer_alpha_efficacy().plot(ax, "forestgreen", 3, "Pfizer, vs Alpha (Thomas et al. 2021)")
+    pfizer_delta_efficacy_lopez_uk().plot(ax, "slateblue", 3, "Pfizer, vs Delta (Thomas et al. scaled to Lopez Bernal et. al)")
+    pfizer_delta_efficacy_israeli_moh().plot(ax, "dodgerblue", 3, "Pfizer, vs Delta (Israeli MOH trend spliced onto scaled Lopez Bernal)", "dotted")
+
+
+
+    ax.legend(loc="lower right")
+    fig.show()
+
+
+
+
+
+def fl_anomolous_data():
     input_data = ProgramInput(output_file=settings.default_output_file,
                               state="FL",
                               world_properties=default_world_properties(),
@@ -52,4 +75,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    efficacy_curves()

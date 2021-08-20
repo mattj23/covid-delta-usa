@@ -3,6 +3,7 @@
     parameter estimation
 """
 from typing import List
+from datetime import date as Date
 
 import numpy
 import scipy.stats
@@ -125,10 +126,6 @@ def custom_infectivity_curve(shape: float, rate: float, shift: float) -> Discret
         position += 1
         value = scipy.stats.gamma.pdf(position, shape, -shift, 1 / rate)
 
-    values[0] = 0
-    values[-1] = 0
-    return DiscreteFunction(traveled - median - 1, values)
-
     # Generate an inverse cdf table
     offset = 10
     total_days = 20
@@ -216,6 +213,40 @@ def natural_delta_efficacy() -> DiscreteFunction:
 
     return DiscreteFunction(0, values).mean_filter(50)
 
+def pfizer_delta_efficacy_lopez_uk() -> DiscreteFunction:
+    """
+    Scales the Thomas et al curve by the difference found (93% vs 88%) in "Effectiveness of Covid-19 Vaccines
+    against the B.1.617.2 (Delta) Variant", Lopez Bernal et al, based on a study done in the UK. The study does not
+    show time varying curves, so I chose to take the Thomas et al. study with its more complete data and scale it by
+    the difference Lopez Bernal found between the alpha and delta efficacy, on the basis  that their methodology
+    was consistent and the relative difference is likely a reasonable estimate.
+    :return:
+    """
+    scale_factor = 0.88 / 0.93
+    return pfizer_alpha_efficacy().scale_y(scale_factor)
+
+
+def pfizer_delta_efficacy_israeli_moh() -> DiscreteFunction:
+    """
+    The Israeli MOH's release potentially shows waning efficacy. These values are taken from the last page of the
+    report and spliced onto everything after day 75 of the Thomas et al. curve
+
+    https://www.gov.il/BlobFolder/reports/vaccine-efficacy-safety-follow-up-committee/
+                                                        he/files_publications_corona_two-dose-vaccination-data.pdf
+    :return:
+    """
+    ref_date = Date(2021, 7, 17)
+    efficacies = [(Date(2021, 4, 15), 0.75),
+                  (Date(2021, 3, 15), 0.67),
+                  (Date(2021, 2, 15), 0.44),
+                  (Date(2021, 1, 15), 0.16)]
+
+    values = pfizer_delta_efficacy_lopez_uk().values[:75]
+    xs = list(range(len(values)))
+    points = list(zip(xs, values)) + [((ref_date - d).days + 21, v) for d, v in efficacies]
+    return DiscreteFunction.from_points(points, 0, "cubic")
+
+
 
 def pfizer_delta_efficacy() -> DiscreteFunction:
     """
@@ -229,7 +260,7 @@ def pfizer_delta_efficacy() -> DiscreteFunction:
 def pfizer_alpha_efficacy() -> DiscreteFunction:
     """
     Based on "Six Month Safety and Efficacy of the BNT162b2 MRNA COVID-19 Vaccine", (doi:10.1101/2021.07.28.21261159),
-    which is still in pre-print and not peer reviewed.
+    Thomas et al. 2021 which is still in pre-print and not peer reviewed.
     """
 
     # Because the paper doesn't have their raw data, I had to use https://apps.automeris.io/wpd/ to extract it

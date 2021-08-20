@@ -145,8 +145,8 @@ void Simulate(const sim::data::ProgramInput &input, std::shared_ptr<const sim::V
     printf("[time] infect = %0.4f s\n", static_cast<double>(simulator.infect_timer.Elapsed()) / 1.0e6);
 #endif
 
-//    nlohmann::json encoded = results;
-//    std::ofstream output{input.output_file.c_str()};
-//    output << encoded << std::endl;
-//    output.close();
+    nlohmann::json encoded = results;
+    std::ofstream output{input.output_file.c_str()};
+    output << encoded << std::endl;
+    output.close();
 }
