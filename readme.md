@@ -140,30 +140,19 @@ The other source is a recently released document by the Israeli Ministry of Heal
 
 | ![Israeli MOH](https://github.com/mattj23/covid-delta-usa/blob/main/images/israeli_moh_2021-06-20.png?raw=true)|
 |:--:|
-| *The natural immunity curves in the left figure are current model defaults. The vaccine efficacy curve from Thomas et al. 2021 is the default used to simulate immunity against the alpha variant. Either the Lopez Bernal et al. curve or the version adjusted with the Israeli Ministry of Health immunity decay can be used in the model to simulate vaccine immunity vs delta, and as expected they produce very different results.*|
+| *This is from the final slide in the Israeli MOH document, showing decreasing efficacy in earlier cohorts.*|
 
 However, I think the Israeli data is not worth dismissing for the following reasons:
 - The UK study is based on vaccinations and positive PCR tests that were performed up to May 16, 2021, and only included symptomatic positive cases.  
 - The UK's [2nd dose vacciations](https://coronavirus.data.gov.uk/details/vaccinations) were less than 1M before the start of March, reached 5M by the end of March, 15M by the end of April, and 20M by May 16. That is to say that 50% of the UK's Pfizer-vaccinated population as of the end of the study received their second dose in April and another 25% in May.
 - To count as having had 2 doses, a positive case had to have symptoms occuring 14 days or more after the receipt of the second dose, which effectively means that all of the study's 2-dose Pfizer cases had been vaccinated in April or earlier and had to have reported symptoms and tested positive by May 16.
-- The Israeli study 
+- Thus for the UK study, of the 15M who were fully vaccinated in time to be counted as 2-dose Pfizer cases by the end of the study, 67% had been fully vaccinated for less than 1.5 months, 26% more for less than 2.5 months, and only 6% of them had been vaccinated more than 2.5 months. They were all counted in the same bin when efficacy was calculated.
+- Unlike the UK study which stopped collecting data in May, the Israeli data contains cases which occurred through the middle of July
+- Israel had fully vaccinated 1.8M by the end of January, 3.3M by the end of February, 4.8M by the end of March, and then reached 5M around the end of April. By the time the study ended in mid July, they had reached 5.2M full vaccinations. That is to say that of the people vaccinated by the end of their study, 34% were vaccinated for more than 5.5 months, another 29% for 4.5 months, another 29% 3.5 months, and only 8% for less than 3.5 months.
+- Israel's cohort fully vaccinated in April who had *symptomatic* infections yielded a 79% vaccine efficacy. They were vaccinated at the same time as 67% of the UK cohort and had an additional 2 months of exposure.  In that light, their cohort efficacy of 79% does not wildly contradict the UK study's lumped efficacy of 88%.
+- As far as data going beyond 2.5 months, less than 6% of the UK study would fall into this category compared to roughly 98% of the Israeli study.
 
-leaker 
-
-## Sample model output
-
-The model output is the accumulated historical trajectories of each simulation.  A set of helper classes exist to parse the data and make it easy to plot and analyze.  As an example, here's a run for Florida based on the contents of `simulate.py`.
-
-Keep in mind this is just an example of model output and not a hard prediction for FL's future.  The model at this point (2021-07-30) makes many assumptions which may or may not reflect reality.
-
-* The run below assumes that a case of the alpha variant confers 100% immunity to all SARS-CoV-2 variants forever.  This is an unrealistic and overly optimistic assumption, which we know is not true. It's currently the next thing on the list to be updated.
-* The run below also does not yet include a differing vaccine response for the delta variant, which is extremely optimistic
-* The model does not currently try to predict and thus take into account vaccinations which occur after the historical data from covidactnow.org. If one were to have predicted numbers for the future they are trivial to feed into the simulation, but the image below does not contain an attempt to do so.  Know that that is a *pessimistic* assumption.
-* This doesn't take into account changes in social contact, which may be an *optimistic* assumption depending on schools and colleges going back into session resulting in more contact than the model assumes, or a *pessimistic* one if people begin social distancing, isolation, and other self-protective activities would would result in less contact than the model assumes.
-
-![FL Simulation Test](https://github.com/mattj23/covid-delta-usa/blob/main/images/fl_test_plot.png?raw=true)
-
-*The methodology used to create this graph was to first look back at late May 2021, before widespread incidence of the delta variant, and adjust the contact probability until it roughly matched case growth at that time.  Then, jumping forward to mid July 2021, leaving the contact probability the same as early summer and adjusting the delta variant infectivity ratio until the infection uptick at the end of July was matched. From there allow the simulation to run out until November, when the system has saturated.*
+Thus, despite the optimism of the UK study, it simply doesn't contain any real information on the efficacies of the vaccine more than 2.5 months after completion, and the data it does show is within 9% (and has overlapping 95% CIs) of the value reported by the Israelis for a similar cohort.  Though the case numbers were small, the Israeli data does contain information on efficacy beyond 4 and 5 months that the UK data cannot currently contradict.
 
 ---
 
