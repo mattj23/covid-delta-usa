@@ -89,6 +89,10 @@ Several papers also attempted to produce curves for the time dynamics of infecti
 
 Between Li and Ashcroft's correction of He, both the incubation distribution and the "infectivity" distribution are approximated and can together yield a workable estimation of transmission dynamics for SARS-CoV-2 in the simulated model.
 
+| ![Infection/Infectivity Distributions](https://github.com/mattj23/covid-delta-usa/blob/main/images/infection_distributions.png?raw=true)|
+|:--:|
+| *On the left is the current exponentiated weibull distributions used for generating the day of symptom onset for the two model variants, and on the right are the relative infectivity curves used to determine how infectious a simulated individual is on any arbitrary day in the simulation.  These are the default model parameters, but are easily replaced.*|
+
 Thus, for the non-delta variants, when an individual in the simulated population is "infected", the date of infection is recorded as the date of the contact event which produced the transmission.  The date of symptom onset is then determined by pulling a random value from Li's exponentiated Weibull distribution and adding it to the current simulation day, yielding a future date at which time "symptoms" will manifest.  This is performed once when the individual is "infected" and the date is recorded into the individual's record.
 
 When this now-infected virus carrying individual is part of a future potential transmission event with another individual, the carrier's "infectivity" is determined by determining the days passed since the individual developed symptoms (will be negative for pre-symptomatic transmission) and plugged into Ashcroft/He's gamma distribution.  The infectivity in this case is a scaled, dimensionless probability of transmitting an infection whose absolute magnitude is unimportant<sup>[10](#infectivity)</sup> but whose relative value against other dates and other viral variants will have a meaningful effect on the model output.
@@ -105,11 +109,11 @@ On the disease carrier side, the "infectivity" is computed as described above.  
 
 *Note: by pre-empting the infectivity check before it happens based on a binary value of immunity, the micro-mechanics explicitly do not contain any mechanism by which a person's immunity reacts differently to various levels of infective potency of the carrier. This could be implemented in the future if such a mechanism could be characterized.*
 
-Immunity is a complex subject even in this simplified model.  Unfortunately, there are no good direct empirical measurements of immunity isolated from social and other factors.  The only measures of immunity we have are efficacy values which represent a reduced incidence ratio between groups.  Because the system being studied is **not** under steady state conditions, efficacy values are products of the exact time period in which they were measured and do not directly represent underlying probabilities<sup>[13](#efficacy_footnote)</sup>.
+Immunity is a complex subject even in this simplified model.  Unfortunately, there are no good direct empirical measurements of immunity isolated from social and other factors.  The only measures of immunity we have are efficacy values which represent a reduced incidence ratio between groups.  Because the system being studied is **not** under steady state conditions, efficacy values are products of the exact time period in which they were measured and do not necessarily represent direct underlying probabilities<sup>[13](#efficacy_footnote)</sup>.
 
 To prevent an immunity mechanic that wanes by nature of being repeatedly testing, it's important to not use a "saving throw" mechanism for pre-empting the carrier's infectivity probability check.  Rather, the stochastic portion of an individual's immunity should be resolved once, so that the simulation isn't doing the equivalent of asking over and over again until it gets an answer it likes.  
 
-However, it's also important to be able to account for immunity that changes with time, since it's known<sup>[14](#lopezbernal2020)</sup> that mRNA vaccine immunity changes between the first and second dose and there's evidence<sup>[12](#cdcleak)</sup> that natural immunity against the delta variant may wane beyond 180 days.
+However, it's also important to be able to account for immunity that changes with time, since it's known<sup>[14](#lopezbernal2021)</sup> that mRNA vaccine immunity changes between the first and second dose and there's evidence<sup>[12](#cdcleak)</sup> that natural immunity against the delta variant may wane beyond 180 days.
 
 To account for both of these seemingly contradictory requirements, the following method is used:
 1. A baseline curve is produced for every time-dependant immunity response. This curve is the complement of the odds-ratio based efficacy at any point in time. That is, if the observed population efficacy is 30% at time ***t<sub>0</sub>***, the curve at time ***t<sub>0</sub>*** has a value of 0.7.
@@ -117,6 +121,24 @@ To account for both of these seemingly contradictory requirements, the following
 3. At any given time ***t***, the individual is immune if their *immunity scalar* is greater than the baseline curve at time ***t***.
 
 Assuming that the uniform distribution generates random samples correctly, at any given time 30% of the population who are at ***t<sub>0</sub>*** in their immunity progression will be immune and the other 70% will not.  If the baseline immunity curve rises to 88% at ***t<sub>1</sub>***, any individuals who were already immune will stay immune, some individuals who were not immune will become immune, and some individuals who were not immune will remain without immunity...but overall the proportion of immune individuals will have risen from 30% to 88% without any recalcuation of the *immunity scalar*.
+
+| ![Immunity curves](https://github.com/mattj23/covid-delta-usa/blob/main/images/immunity_curves.png?raw=true)|
+|:--:|
+| *The natural immunity curves in the left figure are current model defaults. The vaccine efficacy curve from Thomas et al. 2021 is the default used to simulate immunity against the alpha variant. Either the Lopez Bernal et al. curve or the version adjusted with the Israeli Ministry of Health immunity decay can be used in the model to simulate vaccine immunity vs delta, and as expected they produce very different results.*|
+
+For estimating the natural immunity conferred by alpha against alpha, the clearest data I found was Hall et al.<sup>[15](#hall2021)</sup> which tracked a cohort of healthcare providers in the UK which had seropositivity tests done from early in the pandemic. From that we can make at least a rough, usable estimate of the efficacy of natural immunity.
+
+Estimates of infection-acquired immunity against the delta variant are harder to come by.  Public Health England's July 9th, 2021 Technical Briefing 19 offered an estimate of an adjusted odds ratio of reinfection by delta against reinfection by alpha.  From this, modifications can be made to the curve from Hall to produce a similar curve.  Unfortunately, there is some contradiction between the two sources in the time estimates given as to when the odds of reinfection become significant, so this portion of the model could use some attention and careful re-reading of both documents.
+
+Estimates of the Pfizer vaccine efficacy (used as a stand-in for both MRNA based vaccines, which are the dominant vaccines administered in the USA) against the alpha variant and ancestral strains come from Thomas et al. 2021<sup>[16](#thomas2021)</sup>, which is currently a preprint but contains a figure showing efficacy development over time.
+
+The efficacy of the vaccines against the delta variant, however, is much less clear.
+
+There are two sources of data currently (July/August 2021) circulating.  The first is Lopez Bernal et al.<sup>[14](#lopezbernal2021)</sup>, a test-negative case-control study done in the UK.  They calculated overall efficacy of the BNT162b2 vaccine (Pfizer/BioNTech) as 93.7% against the alpha variant and 88.0% against the delta variant.
+
+The other source is a recently released document by the Israeli Ministry of Health<sup>[16](#israelimoh2021)</sup> which implies significant waning/decaying immunity against the delta variant. This document has received a fair amount of criticism in light of the Lopez Bernal publication, as it implies a much bleaker 
+
+leaker 
 
 ## Sample model output
 
@@ -159,9 +181,13 @@ Keep in mind this is just an example of model output and not a hard prediction f
 
 <a name="cdcleak">12</a>: Center for Disease Control, [Improving communications around vaccine breakthrough and vaccine effectiveness](https://context-cdn.washingtonpost.com/notes/prod/default/documents/54f57708-a529-4a33-9a44-b66d719070d9/note/7335c3ab-06ee-4121-aaff-a11904e68462.#page=1). Leaked to Washington Post, July 29, 2021
 
-<a name="efficacy_footnote">13</a>: The efficacy cannot be used as a simple probability for determining the odds of a single infection being prevented, since the same individuals being tested more than one time will statistically result in a population incidence ratio less than the efficacy. Nor can it be thought of as a steady-state incidence ratio in this case, since the infection incidence ratio by definition will start at 0:0 and then change as time progresses and immunity develops/decays.  Rather, the probability of preventing a single infection must be chosen such that after a very specific amount of time *in the system* the incidence ratio of infected group A to infected group B happens to show that the efficacy observed in studies *after that amount of time* is plausible.
+<a name="efficacy_footnote">13</a>: The efficacy cannot be used as a simple probability for determining the odds of a single infection being prevented, since the same individuals being tested more than one time will statistically result in a population incidence ratio less than the efficacy. Nor can it be thought of as a steady-state incidence ratio in this case, since the infection incidence ratio by definition will start as an undefined value 0/0 and then change as time progresses and immunity develops/decays.  
 
-<a name="lopezbernal2020">14</a>: Lopez Bernal J, Andrews N, Gower C, et al. Effectiveness of Covid-19 Vaccines against the B.1.617.2 (Delta) Variant. N Engl J Med. Published online July 21, 2021:NEJMoa2108891. doi:10.1056/NEJMoa2108891
+<a name="lopezbernal2021">14</a>: Lopez Bernal J, Andrews N, Gower C, et al. Effectiveness of Covid-19 Vaccines against the B.1.617.2 (Delta) Variant. N Engl J Med. Published online July 21, 2021:NEJMoa2108891. doi:10.1056/NEJMoa2108891
+
+<a name="hall2022">15</a>: Hall VJ, Foulkes S, Charlett A, et al. SARS-CoV-2 infection rates of antibody-positive compared with antibody-negative health-care workers in England: a large, multicentre, prospective cohort study (SIREN). The Lancet. 2021;397(10283):1459-1469. doi:10.1016/S0140-6736(21)00675-9
+
+<a name="israelimoh2021">16</a>: https://www.gov.il/BlobFolder/reports/vaccine-efficacy-safety-follow-up-committee/he/files_publications_corona_two-dose-vaccination-data.pdf 
 
 
 ---
